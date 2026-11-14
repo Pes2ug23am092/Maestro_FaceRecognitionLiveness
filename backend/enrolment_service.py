@@ -53,7 +53,7 @@ def check_face_quality(image_bytes: bytes) -> tuple[bool, str, dict]:
 
     return True, "QUALITY_PASSED", metrics
 
-def enroll_user(badge_id: str, image_bytes: bytes, group_id: str = "GRP_EMPLOYEE") -> dict:
+def enroll_user(badge_id: str, image_bytes: bytes, group_id: str | None = None) -> dict:
     """
     Enrolls a user into the Rekognition Collection and DynamoDB users table.
     Enforces quality filtering and stores vectors only.
@@ -91,15 +91,18 @@ def enroll_user(badge_id: str, image_bytes: bytes, group_id: str = "GRP_EMPLOYEE
     face_id = face_records[0]["Face"]["FaceId"]
 
     # 3. Save or update user in DynamoDB
-    users_table.put_item(
-        Item={
+    # NEVER overwrite an existing user's group / status / validity / name: enrolling a face must not promote, demote or
+    # un-revoke anyone (the old put_item replaced the whole record: sysadmins became employees, a revoked badge became active).
+    existing = users_table.get_item(Key={"badge_id": badge_id}).get("Item") or {}
+    item = {**existing,
             "badge_id": badge_id,
-            "group_id": group_id,
-            "status": "active",
+            "group_id": group_id or existing.get("group_id", "GRP_EMPLOYEE"),  # explicit group only for NEW users
+            "status": existing.get("status", "active"),
             "primary_face_id": face_id,
-            "enrolled_at": int(__import__("time").time())  # timestamp only: never store account/ARN details in the users table
-        }
-    )
+            "enrolled_at": int(__import__("time").time())}  # timestamp only: never store account/ARN details
+    if existing.get("group_id"):
+        item["group_id"] = existing["group_id"]
+    users_table.put_item(Item=item)
 
     return {
         "success": True,

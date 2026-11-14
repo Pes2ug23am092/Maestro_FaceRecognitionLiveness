@@ -1,64 +1,58 @@
-import time
+"""Step-up OTP, stored in DynamoDB (kiosk_sessions, key 'OTP#<badge>:<kiosk>') so it works across Lambda instances.
+Only a salted hash of the code is stored. 3 wrong attempts -> locked for LOCK_SECONDS (the old in-memory version locked forever).
+`code_for_demo` is returned only when OTP_DEMO=1 (default on for the demo; in production the code goes out via SES/SNS)."""
 import hashlib
-import random
+import os
+import secrets
+import time
+
 import boto3
-from backend.config import REGION, TABLE_USERS
 
-dynamodb = boto3.resource("dynamodb", region_name=REGION)
-users_table = dynamodb.Table(TABLE_USERS)
+from backend.config import REGION, TABLE_SESSIONS
 
-# In-memory or DynamoDB attempt cache
-# key: (badge_id, kiosk_id) -> {"hash": str, "expires_at": int, "attempts": int, "locked": bool}
-_OTP_STORE = {}
+_t = boto3.resource("dynamodb", region_name=REGION).Table(TABLE_SESSIONS)
+SALT = os.getenv("OTP_SALT", "kiosk-otp-salt-2026")
+OTP_TTL, LOCK_SECONDS, MAX_ATTEMPTS = 300, 300, 3
+DEMO = os.getenv("OTP_DEMO", "1") == "1"
+
+
+def _key(badge_id: str, kiosk_id: str) -> dict:
+    return {"nonce": f"OTP#{badge_id}:{kiosk_id}"}
+
+
+def _hash(code: str) -> str:
+    return hashlib.sha256(f"{code}:{SALT}".encode("utf-8")).hexdigest()
+
 
 def generate_otp_for_user(badge_id: str, kiosk_id: str = "KIOSK_MAIN") -> dict:
-    code = f"{random.randint(100000, 999999)}"
+    code = f"{secrets.randbelow(900000) + 100000}"
     now = int(time.time())
-    expires_at = now + 300  # 5 minutes
-    salt = "kiosk-otp-salt-2026"
-    code_hash = hashlib.sha256(f"{code}:{salt}".encode("utf-8")).hexdigest()
+    _t.put_item(Item={**_key(badge_id, kiosk_id), "hash": _hash(code), "expires_at": now + OTP_TTL, "ttl": now + OTP_TTL + 600,
+                      "attempts": 0, "locked_until": 0, "used": True})
+    out = {"badge_id": badge_id, "kiosk_id": kiosk_id, "expires_at": now + OTP_TTL}
+    if DEMO:
+        out["code_for_demo"] = code  # demo only: no email/SMS gating
+    return out
 
-    key = f"{badge_id}:{kiosk_id}"
-    _OTP_STORE[key] = {
-        "hash": code_hash,
-        "expires_at": expires_at,
-        "attempts": 0,
-        "locked": False
-    }
-
-    return {
-        "badge_id": badge_id,
-        "kiosk_id": kiosk_id,
-        "code_for_demo": code,  # Provided for demo/testing without email gating
-        "expires_at": expires_at
-    }
 
 def verify_otp(badge_id: str, kiosk_id: str, submitted_code: str) -> dict:
     now = int(time.time())
-    key = f"{badge_id}:{kiosk_id}"
-    record = _OTP_STORE.get(key)
-
-    if not record:
+    rec = _t.get_item(Key=_key(badge_id, kiosk_id), ConsistentRead=True).get("Item")
+    if not rec:
         return {"status": "INVALID", "message": "No active OTP session found.", "attempts_left": 0}
-
-    if record.get("locked"):
+    if int(rec.get("locked_until", 0)) > now:
         return {"status": "LOCKED_OUT", "message": "Too many failed attempts. Identity locked.", "attempts_left": 0}
-
-    if record["expires_at"] < now:
+    if int(rec["expires_at"]) < now:
         return {"status": "INVALID", "message": "OTP expired.", "attempts_left": 0}
-
-    salt = "kiosk-otp-salt-2026"
-    submitted_hash = hashlib.sha256(f"{submitted_code}:{salt}".encode("utf-8")).hexdigest()
-
-    if submitted_hash == record["hash"]:
-        # Success! Clear record
-        del _OTP_STORE[key]
+    if secrets.compare_digest(_hash(submitted_code), rec["hash"]):
+        _t.delete_item(Key=_key(badge_id, kiosk_id))
         return {"status": "VERIFIED", "message": "OTP verified successfully."}
-    else:
-        record["attempts"] += 1
-        attempts_left = max(0, 3 - record["attempts"])
-        if record["attempts"] >= 3:
-            record["locked"] = True
-            print(f"[SECURITY ALERT] Badge {badge_id} LOCKED OUT after 3 failed OTP attempts on {kiosk_id}!")
-            return {"status": "LOCKED_OUT", "message": "3 failed attempts. Account locked out.", "attempts_left": 0}
-        return {"status": "INVALID", "message": f"Incorrect OTP code. {attempts_left} attempts remaining.", "attempts_left": attempts_left}
+    n = int(_t.update_item(Key=_key(badge_id, kiosk_id), UpdateExpression="ADD attempts :one",
+                           ExpressionAttributeValues={":one": 1}, ReturnValues="UPDATED_NEW")["Attributes"]["attempts"])
+    if n >= MAX_ATTEMPTS:
+        _t.update_item(Key=_key(badge_id, kiosk_id), UpdateExpression="SET locked_until = :u",
+                       ExpressionAttributeValues={":u": now + LOCK_SECONDS})
+        print(f"[SECURITY ALERT] Badge {badge_id} LOCKED OUT after {MAX_ATTEMPTS} failed OTP attempts on {kiosk_id}!")
+        return {"status": "LOCKED_OUT", "message": "3 failed attempts. Account locked out.", "attempts_left": 0}
+    left = MAX_ATTEMPTS - n
+    return {"status": "INVALID", "message": f"Incorrect OTP code. {left} attempts remaining.", "attempts_left": left}

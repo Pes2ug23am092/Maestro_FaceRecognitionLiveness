@@ -1,0 +1,7 @@
+{
+  "region": "us-east-1",
+  "function": "hidb-kiosk-backend",
+  "api_id": "i9as63zk3e",
+  "url": "https://i9as63zk3e.execute-api.us-east-1.amazonaws.com",
+  "kiosk": "https://i9as63zk3e.execute-api.us-east-1.amazonaws.com/kiosk"
+}

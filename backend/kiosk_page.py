@@ -18,7 +18,8 @@ router = APIRouter()
 @router.get("/config")
 def config():
     seed = load_policy_seed()
-    return {"zones": [{"id": z["id"], "name": z["name"], "risk": z["risk"]} for z in seed["zones"]],
+    return {"zones": [{"id": z["id"], "name": z["name"], "risk": z["risk"], "second_factor": z["second_factor"]} for z in seed["zones"]],
+            "schedules": seed["schedules"], "calendar": seed["calendar"],
             "users": [{"id": u["id"], "name": u.get("name", u["id"]), "group": u["groups"][0], "status": u["status"]}
                       for u in seed["users"]]}
 

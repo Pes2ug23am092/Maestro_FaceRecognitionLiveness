@@ -41,3 +41,7 @@
 - Website: 12 campus-rule scenarios + Run all, 6 physical attack scenarios with countdown, enrol-under-all-badges.
 - Tests: policy adapter 7 (incl. website scenarios), fusion 9, A harness 7 (live AWS) = 23 pass; e2e on real AWS all cases correct.
 - Issues / risks: one outlier per ~25 requests (2.3 s) from the network tail; model untested on the user's webcam; Tier 2 untested on a real screen-lit face; not deployed (Lambda would remove the connection cost).
+
+## [2026-11-14 15:50] [B] Deployed to AWS (Lambda + API Gateway + S3 deps + EventBridge + CloudWatch)
+- URL https://i9as63zk3e.execute-api.us-east-1.amazonaws.com/kiosk . Zip + S3 (Docker push failed). Created: IAM role hidb-kiosk-lambda-role, Lambda hidb-kiosk-backend, HTTP API, EventBridge rule, log group, dashboard hidb-kiosk, S3 objects hidb/deps*.zip, empty ECR repo. OTP moved to DynamoDB.
+- e2e on the deployed API: all cases correct, lockout works, server 175-390 ms, cold 6 s. API is unauthenticated: restrict or delete after the demo.

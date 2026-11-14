@@ -43,7 +43,7 @@ class DecideRequest(BaseModel):
 class EnrollRequest(BaseModel):
     badge_id: str
     image_base64: str
-    group_id: Optional[str] = "GRP_EMPLOYEE"
+    group_id: Optional[str] = None  # only used for NEW users; existing users keep their group/status
 
 class OtpGenerateRequest(BaseModel):
     badge_id: str
@@ -179,7 +179,7 @@ def post_enroll(req: EnrollRequest):
         img_bytes = base64.b64decode(req.image_base64)
     except Exception:
         raise HTTPException(status_code=400, detail="Invalid base64 image")
-    res = enroll_user(req.badge_id, img_bytes, req.group_id or "GRP_EMPLOYEE")
+    res = enroll_user(req.badge_id, img_bytes, req.group_id)
     if not res["success"]:
         raise HTTPException(status_code=400, detail=res)
     try:  # first search right after indexing was measured at ~4 s: pay that here, not on the user's first scan
@@ -276,6 +276,14 @@ app.include_router(kiosk_router)
 # Handler for AWS Lambda (if deploying via Mangum / API Gateway)
 try:
     from mangum import Mangum
-    handler = Mangum(app)
+    _mangum = Mangum(app)
+
+    def handler(event, context):
+        """Lambda entry: API Gateway HTTP API events go to FastAPI; an EventBridge schedule just keeps the instance + connections warm."""
+        if isinstance(event, dict) and event.get("source") == "aws.events":
+            from backend.decide_service import warm_pool
+            warm_pool()
+            return {"warmed": True}
+        return _mangum(event, context)
 except ImportError:
     handler = None

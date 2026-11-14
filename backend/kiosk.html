@@ -19,7 +19,7 @@ small{color:var(--mute)}table{width:100%;border-collapse:collapse;font-size:12px
 .ok{color:var(--allow);font-weight:700}.bad{color:var(--deny);font-weight:700}h3{margin:0 0 6px;font-size:15px}
 #flash{position:fixed;inset:0;display:none;z-index:9;align-items:flex-start;justify-content:center;padding-top:8vh;color:#fff;font:700 34px system-ui;text-shadow:0 2px 6px #000}
 #count{position:fixed;inset:0;display:none;z-index:8;align-items:center;justify-content:center;background:#000a;font:800 120px system-ui;color:#fff}
-.sc td:first-child{width:55%}.how{color:var(--mute);font-size:12px}
+#matrix th,#matrix td{padding:6px 8px;font-size:12px;border:1px solid var(--line);text-align:center;vertical-align:middle}#matrix th{background:#0d2140}#matrix td.na{color:#5f7596}#matrix tr.sel td:first-child,#matrix tr.sel th:first-child{outline:2px solid var(--blue)}#matrix td.selcol,#matrix th.selcol{background:#16345f}#matrix td.cell-sel{outline:2px solid var(--allow);background:#12402f}.sc td:first-child{width:55%}.how{color:var(--mute);font-size:12px}
 </style></head><body>
 <div id="flash"><div id="flashmsg"></div></div><div id="count"></div>
 <header><b>HID</b><div><strong>Liveness &amp; Access Kiosk</strong><br><small id="status">connecting…</small></div></header>
@@ -45,7 +45,11 @@ small{color:var(--mute)}table{width:100%;border-collapse:collapse;font-size:12px
  <div class="card"><h3>Demo scenarios: presentation attacks &amp; edge cases (physical props)</h3>
   <small>Click Try, get the prop ready, and a 3 s countdown starts the scan. Enrolled badge USER_003 at the main entrance.</small>
   <table class="sc"><thead><tr><th>Scenario</th><th>Expect</th><th>Result</th><th></th></tr></thead><tbody id="phys"></tbody></table></div>
-</section></main>
+</section><section style="grid-column:1/-1"><div class="card"><h3>Access rules: who can enter which door, and when</h3>
+ <div id="hint" style="margin:6px 0 10px;color:var(--ink)"></div>
+ <div style="overflow-x:auto"><table id="matrix"></table></div>
+ <small>"+ code" = high-security door: always asks for a one-time code, even inside the person's hours. Outside the hours: a code is requested if the scan is clear, denied if it is unclear. "–" = not authorised. 20 Nov 2026 (datacenter audit): only Sysadmin and Security.</small></div></section>
+</main>
 <script>
 const $=id=>document.getElementById(id), sleep=ms=>new Promise(r=>setTimeout(r,ms));
 const WHY={OK_IN_SCHEDULE:"Live person, identity verified, access allowed right now.",SPOOF_DETECTED:"Presentation attack detected (photo / screen / video / mask).",
@@ -78,10 +82,29 @@ async function api(p,b){const r=await fetch(p,{method:b?'POST':'GET',headers:{'C
  return j.detail&&typeof j.detail==='object'&&!j.outcome?{...j.detail,_status:r.status}:{...j,_status:r.status}}
 async function init(){try{const h=await api('/health');$('status').textContent='online · '+(h.region||'')+' · AWS Rekognition + B liveness model';
  const c=await api('/config');$('badge').innerHTML=c.users.map(u=>`<option value="${u.id}">${u.id} · ${u.name} (${u.group.replace('GRP_','')})</option>`).join('');
- $('zone').innerHTML=c.zones.map(z=>`<option value="${z.id}">${z.name} · ${z.risk}</option>`).join('');$('badge').value='USER_003';$('zone').value='ZONE_ENTRY_MAIN'}catch(e){$('status').textContent='backend not reachable'}
+ $('zone').innerHTML=c.zones.map(z=>`<option value="${z.id}">${z.name} · ${z.risk}</option>`).join('');$('badge').value='USER_003';$('zone').value='ZONE_ENTRY_MAIN';CFG=c;renderMatrix();$('badge').onchange=$('zone').onchange=updateHint}catch(e){$('status').textContent='backend not reachable'}
  try{$('cam').srcObject=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480}})}catch(e){$('why').textContent='Camera unavailable: '+e.message}
  $('ctx').innerHTML=CONTEXT.map((s,i)=>`<tr><td>${s.t}<div class="how">${s.b} · ${s.z.replace('ZONE_','')} · ${s.c}</div></td><td><span class="pill ${s.e}">${s.e.replace('_','-')}</span></td><td id="cr${i}">–</td><td><button class="sm" onclick="runCtx(${i})">Run</button></td></tr>`).join('');
  $('phys').innerHTML=PHYS.map((s,i)=>`<tr><td>${s.t}<div class="how">${s.how}</div></td><td><span class="pill ${s.e}">${s.e.replace('_','-')}</span></td><td id="pr${i}">–</td><td><button class="sm" onclick="runPhys(${i})">Try</button></td></tr>`).join('')}
+
+let CFG=null;
+const DAYN=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+function fmtDays(d){const s=DAYN.filter(x=>d.includes(x));if(s.length===7)return'every day';if(s.join()==='Mon,Tue,Wed,Thu,Fri')return'Mon–Fri';if(s.join()==='Mon,Tue,Wed,Thu,Fri,Sat')return'Mon–Sat';return s.join(', ')}
+function fmtHours(a,b){return(a==='00:00'&&(b==='23:59'||b==='24:00'))?'24 h':a+'–'+b}
+function cellFor(group,zone){const rows=CFG.schedules.filter(s=>s.group===group&&s.zone===zone.id);if(!rows.length)return null;
+ return rows.map(r=>r.windows.map(w=>fmtDays(w.days)+', '+fmtHours(w.start,w.end)).join('; ')).join('; ')+(zone.second_factor?' + code':'')}
+function renderMatrix(){if(!CFG)return;const groups=[...new Set(CFG.users.map(u=>u.group))];
+ const who=g=>CFG.users.filter(u=>u.group===g).map(u=>u.name.split(' (')[0]).join(', ');
+ let h='<tr><th>Group (people)</th>'+CFG.zones.map(z=>`<th data-z="${z.id}">${z.name.replace(/ \(.*/,'')}<br><small>${z.risk}${z.second_factor?' · code':''}</small></th>`).join('')+'</tr>';
+ h+=groups.map(g=>`<tr data-g="${g}"><th style="text-align:left">${g.replace('GRP_','')}<br><small>${who(g)}</small></th>`+CFG.zones.map(z=>{const c=cellFor(g,z);return c?`<td data-z="${z.id}">${c}</td>`:`<td class="na" data-z="${z.id}">–</td>`}).join('')+'</tr>').join('');
+ $('matrix').innerHTML=h;updateHint()}
+function updateHint(){if(!CFG)return;const u=CFG.users.find(x=>x.id===$('badge').value),z=CFG.zones.find(x=>x.id===$('zone').value);if(!u||!z)return;
+ const c=cellFor(u.group,z);let msg;
+ if(u.status!=='active')msg=`<b>${u.name}</b> (${u.group.replace('GRP_','')}) is <b style="color:var(--deny)">${u.status}</b>: always denied.`;
+ else msg=c?`<b>${u.name}</b> (${u.group.replace('GRP_','')}) at <b>${z.name}</b>: <span style="color:var(--allow)">${c}</span>`:`<b>${u.name}</b> (${u.group.replace('GRP_','')}) at <b>${z.name}</b>: <span style="color:var(--deny)">not authorised</span>`;
+ $('hint').innerHTML=msg;
+ document.querySelectorAll('#matrix tr').forEach(r=>r.classList.toggle('sel',r.dataset.g===u.group));
+ document.querySelectorAll('#matrix [data-z]').forEach(e=>{e.classList.toggle('selcol',e.dataset.z===z.id);e.classList.toggle('cell-sel',e.tagName==='TD'&&e.dataset.z===z.id&&e.parentElement.dataset.g===u.group)})}
 function grab(cv){const v=$('cam');cv.width=480;cv.height=Math.round(480*v.videoHeight/v.videoWidth)||360;cv.getContext('2d').drawImage(v,0,0,cv.width,cv.height);return cv.toDataURL('image/jpeg',0.82)}
 async function burst(n=6,gap=80){const cv=document.createElement('canvas'),o=[];for(let i=0;i<n;i++){o.push(grab(cv));await sleep(gap)}return o}
 function show(res,ms){const o=res.outcome||'DENY';$('result').className='card '+o;$('outcome').textContent=o.replace('_','-');

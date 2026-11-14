@@ -7,3 +7,7 @@ __pycache__/
 .aws/
 tests/fixtures/*.jpg
 !tests/fixtures/.gitkeep
+
+# local build outputs
+models/build/
+models/dist/

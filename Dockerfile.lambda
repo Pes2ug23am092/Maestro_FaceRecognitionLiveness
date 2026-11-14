@@ -1,0 +1,10 @@
+# Backend (FastAPI via Mangum) + B's liveness model as one Lambda container image. Build context = repo root.
+#   docker build -f Dockerfile.lambda -t hid-kiosk-backend:latest .
+FROM public.ecr.aws/lambda/python:3.12
+COPY backend/requirements-lambda.txt .
+RUN pip install --no-cache-dir -r requirements-lambda.txt
+COPY backend/ ${LAMBDA_TASK_ROOT}/backend/
+COPY config/ ${LAMBDA_TASK_ROOT}/config/
+COPY models/liveness/ ${LAMBDA_TASK_ROOT}/models/liveness/
+COPY models/artifacts/liveness_cnn.onnx models/artifacts/face_detection_yunet_2023mar.onnx ${LAMBDA_TASK_ROOT}/models/artifacts/
+CMD ["backend.main.handler"]
