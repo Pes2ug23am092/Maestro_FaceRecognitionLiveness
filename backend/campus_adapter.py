@@ -45,7 +45,7 @@ def user_from_item(item: dict | None) -> dict | None:
     """DynamoDB user item -> policy user dict (None if the badge does not exist)."""
     if not item:
         return None
-    return {"id": item["badge_id"], "groups": [item.get("group_id", "GRP_EMPLOYEE")],
+    return {"id": item["badge_id"], "name": item.get("name", item["badge_id"]), "groups": [item.get("group_id", "GRP_EMPLOYEE")],
             "status": item.get("status", "active"), "grants": [],
             "valid_from": (item.get("valid_from") or "")[:10] or None,
             "valid_to": (item.get("valid_to") or "")[:10] or None}

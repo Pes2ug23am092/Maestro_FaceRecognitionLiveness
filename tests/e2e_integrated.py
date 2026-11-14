@@ -74,7 +74,7 @@ try:
             cases.append((name, [b64(p) for p in clips[(S, clip)][:6]], {}))
     cases.append(("impostor (other person)", [b64(p) for p in clips[(OTHER, "1")][:6]], {}))
     cases.append(("genuine, door not authorised", live_hr, {"zone": "ZONE_SERVER_ROOM"}))
-    cases.append(("genuine, out of hours 23:30", live_hr, {"now": "Tue 23:30"}))
+    cases.append(("genuine, out of hours 23:30 (Office B)", live_hr, {"now": "Tue 23:30", "zone": "ZONE_OFFICE_B"}))
     cases.append(("genuine, audit day (admin only)", live_hr, {"now": "2026-11-20 10:00"}))
     for name, fr, kw in cases:
         if not fr:

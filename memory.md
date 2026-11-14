@@ -34,3 +34,10 @@
 - Numbers: AWS Rekognition labels alone: attacks accepted 91.4 % (orig rule) / 95.4 % (narrow), accuracy ~37 %; B CNN alone 96.2 % (target 99.4 %). Real-AWS e2e: genuine ALLOW, print/cut-print/video replay DENY, impostor DENY, schedule cases correct, lockout engages on 3rd failure; server time 1.1-1.8 s warm.
 - Issues / risks: no AppConfig / Face Liveness widget / offline edge mode / Lambda deploy; model is trained on public data and has not been run on the user's laptop webcam (domain shift: tune thresholds.v2.json via the live spoof-probability readout); latency margin thin.
 - Next: parallelise nonce+lock checks; own-camera data; Face Liveness widget; offline edge; deploy.
+
+## [2026-11-14 15:10] [B] Round 3: latency root cause, schedule data, website demo scenarios
+- Root cause of 4-6 s scans: new TLS connections to AWS cost ~1.5-2 s from the demo laptop (measured, not IPv6); parallel calls + idle connections kept hitting cold ones; kiosk timer included /session. Fixed with 1 Rekognition call, parallel DynamoDB checks, background writes, keep-warm pool (real search path), hedged search, nonce prefetch. Result: p50 952 ms, p95 1.2 s, 24/25 <= 2 s; idle 30-60 s still ~0.95 s.
+- Schedule: 31 rows / 7 groups x 8 doors + 4 users (infra/seed_extra.py); old data denied weekends.
+- Website: 12 campus-rule scenarios + Run all, 6 physical attack scenarios with countdown, enrol-under-all-badges.
+- Tests: policy adapter 7 (incl. website scenarios), fusion 9, A harness 7 (live AWS) = 23 pass; e2e on real AWS all cases correct.
+- Issues / risks: one outlier per ~25 requests (2.3 s) from the network tail; model untested on the user's webcam; Tier 2 untested on a real screen-lit face; not deployed (Lambda would remove the connection cost).

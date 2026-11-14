@@ -17,8 +17,10 @@ def d(user, zone, when, verdict="CONFIDENT", mode="ONLINE", off=None):
 
 def test_employee_entry_in_and_out_of_hours():
     assert d("USER_003", "ZONE_ENTRY_MAIN", "Tue 10:00") == {"outcome": "ALLOW", "reasons": ["OK_IN_SCHEDULE"]}
-    assert d("USER_003", "ZONE_ENTRY_MAIN", "Tue 23:30")["reasons"] == ["OUT_OF_HOURS_STEPUP"]
-    assert d("USER_003", "ZONE_ENTRY_MAIN", "Tue 23:30", "LOW")["reasons"] == ["LOW_CONF_OUT_OF_HOURS"]
+    assert d("USER_003", "ZONE_ENTRY_MAIN", "Sat 23:30") == {"outcome": "ALLOW", "reasons": ["OK_IN_SCHEDULE"]}  # entrance open 24/7
+    assert d("USER_003", "ZONE_OFFICE_B", "Tue 23:30")["reasons"] == ["OUT_OF_HOURS_STEPUP"]
+    assert d("USER_003", "ZONE_OFFICE_B", "Tue 23:30", "LOW")["reasons"] == ["LOW_CONF_OUT_OF_HOURS"]
+    assert d("USER_003", "ZONE_OFFICE_B", "Sat 11:00")["reasons"] == ["OUT_OF_HOURS_STEPUP"]  # weekday-only door
 
 
 def test_zone_authorisation_and_user_status():
@@ -48,3 +50,14 @@ def test_ddb_item_adapter_and_risk_mapping():
     assert u["valid_to"] == "2026-12-31" and u["groups"] == ["GRP_EMPLOYEE"] and user_from_item(None) is None
     assert zone_risk("ZONE_ENTRY_MAIN") == "low" and zone_risk("ZONE_OFFICE_A") == "med"
     assert zone_risk("ZONE_SERVER_ROOM") == "high" and zone_risk("ZONE_DOES_NOT_EXIST") == "high"
+
+
+def test_demo_scenarios_in_the_kiosk_page_match_policy():
+    """The website's context scenarios (backend/kiosk.html) must produce their expected outcome for a confident match."""
+    import re
+    html = (Path(__file__).resolve().parents[1] / "backend" / "kiosk.html").read_text(encoding="utf-8")
+    rows = re.findall(r'\{t:"[^"]+",b:"(\w+)",z:"(\w+)",c:"([^"]+)",e:"(\w+)",r:"(\w+)"\}', html)
+    assert len(rows) >= 12
+    for b, z, c, e, r in rows:
+        got = d(b, z, c)
+        assert got["outcome"] == e and r in got["reasons"], (b, z, c, e, r, got)

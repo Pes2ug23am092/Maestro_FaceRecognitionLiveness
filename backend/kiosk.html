@@ -1,0 +1,135 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HID Liveness Kiosk</title><style>
+:root{--bg:#0b1b33;--panel:#11284a;--ink:#e8f0ff;--mute:#8fa6c8;--allow:#1fbf75;--step:#f0a020;--deny:#e5484d;--line:#25406b;--blue:#2a6df4}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.4 system-ui,Segoe UI,Arial}
+header{display:flex;align-items:center;gap:12px;padding:12px 20px;border-bottom:1px solid var(--line)}
+header b{background:var(--blue);padding:2px 10px;border-radius:4px;letter-spacing:2px}
+main{display:grid;grid-template-columns:minmax(320px,1.1fr) minmax(320px,1fr);gap:16px;padding:16px;max-width:1250px;margin:auto}
+@media(max-width:900px){main{grid-template-columns:1fr}}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px;margin-bottom:12px}
+video{width:100%;border-radius:10px;background:#000;transform:scaleX(-1)}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0}label{font-size:12px;color:var(--mute);display:block}
+select,input,button{background:#0d2140;color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit}
+button{cursor:pointer;background:var(--blue);border-color:var(--blue);font-weight:600}button.sec{background:#0d2140;border-color:var(--line)}button.sm{padding:4px 10px;font-size:12px}button:disabled{opacity:.5;cursor:wait}
+#result{text-align:center;padding:18px;border:2px solid var(--line);min-height:190px}#outcome{font-size:44px;font-weight:800}
+.ALLOW{border-color:var(--allow)!important;color:var(--allow)}.STEP_UP{border-color:var(--step)!important;color:var(--step)}.DENY{border-color:var(--deny)!important;color:var(--deny)}
+.kv{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;font-size:13px;color:var(--mute);text-align:left;margin-top:10px}.kv span:nth-child(even){color:var(--ink);text-align:right}
+small{color:var(--mute)}table{width:100%;border-collapse:collapse;font-size:12px}td,th{padding:4px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+.pill{padding:1px 8px;border-radius:99px;font-size:11px;font-weight:700}.pill.ALLOW{background:#0f3d2b}.pill.STEP_UP{background:#47330a}.pill.DENY{background:#4a1a1c}
+.ok{color:var(--allow);font-weight:700}.bad{color:var(--deny);font-weight:700}h3{margin:0 0 6px;font-size:15px}
+#flash{position:fixed;inset:0;display:none;z-index:9;align-items:flex-start;justify-content:center;padding-top:8vh;color:#fff;font:700 34px system-ui;text-shadow:0 2px 6px #000}
+#count{position:fixed;inset:0;display:none;z-index:8;align-items:center;justify-content:center;background:#000a;font:800 120px system-ui;color:#fff}
+.sc td:first-child{width:55%}.how{color:var(--mute);font-size:12px}
+</style></head><body>
+<div id="flash"><div id="flashmsg"></div></div><div id="count"></div>
+<header><b>HID</b><div><strong>Liveness &amp; Access Kiosk</strong><br><small id="status">connecting…</small></div></header>
+<main>
+<section>
+ <div class="card"><video id="cam" autoplay playsinline muted></video>
+  <div class="row"><div><label>Badge</label><select id="badge"></select></div><div><label>Door</label><select id="zone"></select></div>
+  <div><label>Demo clock (optional)</label><input id="clock" placeholder="real time | Tue 23:30 | 2026-11-20 10:00" size="26"></div></div>
+  <div class="row"><button id="go">Scan &amp; request access</button><button id="enrol" class="sec">Enrol this face (selected badge)</button><button id="enrolall" class="sec">Enrol this face under ALL demo badges</button></div>
+  <small>Decision time = capture complete → verdict on screen (target ≤ 2 s). Enrolment stores face vectors in the Rekognition collection, not images.</small></div>
+ <div class="card"><h3>Recent decisions</h3><table id="log"><thead><tr><th>Time</th><th>Badge</th><th>Door</th><th>Outcome</th><th>ms</th></tr></thead><tbody></tbody></table></div>
+</section>
+<section>
+ <div id="result" class="card"><div id="outcome">READY</div><div id="why">Enrol your face, then press Scan.</div><div id="kv" class="kv"></div>
+  <div id="stepup" style="display:none;margin-top:12px"><div class="row" style="justify-content:center">
+  <button id="recap" class="sec">Recapture</button><button id="chal" class="sec">Liveness challenge (colour + head turn)</button><button id="otpreq" class="sec">Send me a code</button></div>
+  <div class="row" style="justify-content:center"><input id="otp" placeholder="6-digit code" size="10" maxlength="6"><button id="otpbtn">Verify code</button></div><small id="otphint"></small></div></div>
+
+ <div class="card"><h3>Demo scenarios: campus access rules <button id="runall" class="sm">Run all</button></h3>
+  <small>Uses YOUR enrolled face. First press “Enrol this face under ALL demo badges”. Each row sets the badge, door and clock, scans, and checks the expected result.</small>
+  <table class="sc"><thead><tr><th>Scenario</th><th>Expect</th><th>Result</th><th></th></tr></thead><tbody id="ctx"></tbody></table></div>
+
+ <div class="card"><h3>Demo scenarios: presentation attacks &amp; edge cases (physical props)</h3>
+  <small>Click Try, get the prop ready, and a 3 s countdown starts the scan. Enrolled badge USER_003 at the main entrance.</small>
+  <table class="sc"><thead><tr><th>Scenario</th><th>Expect</th><th>Result</th><th></th></tr></thead><tbody id="phys"></tbody></table></div>
+</section></main>
+<script>
+const $=id=>document.getElementById(id), sleep=ms=>new Promise(r=>setTimeout(r,ms));
+const WHY={OK_IN_SCHEDULE:"Live person, identity verified, access allowed right now.",SPOOF_DETECTED:"Presentation attack detected (photo / screen / video / mask).",
+ID_MISMATCH:"Face does not match the selected badge.",USER_UNKNOWN:"Badge is not enrolled or unknown.",USER_REVOKED:"This badge is suspended or revoked.",USER_EXPIRED:"Badge outside its validity dates.",
+ZONE_NOT_AUTHORISED:"Not authorised for this door.",CALENDAR_BLOCK:"Door closed today (holiday, audit or lockdown).",OUT_OF_HOURS_STEPUP:"Outside permitted hours: approval code required.",
+LOW_CONF_OUT_OF_HOURS:"Unclear scan and outside permitted hours.",LOW_CONFIDENCE:"Scan unclear: recapture, run the liveness challenge, or use a code.",HIGH_RISK_2FA:"High-security door: second factor required.",
+CHALLENGE_FAILED:"Liveness challenge failed (colour reflection or head turn did not match).",CHALLENGE_EXPIRED:"Challenge expired. Start again.",INTERNAL_ERROR_FAIL_CLOSED:"System error: access denied (fail closed).",
+ATTEMPTS_EXCEEDED:"Too many failed attempts. Locked for 60 s.",STEPUP_OK:"Additional verification passed.",OTP_WRONG:"Wrong code."};
+const CONTEXT=[
+ {t:"Employee at the main entrance, weekday 10:00",b:"USER_003",z:"ZONE_ENTRY_MAIN",c:"Tue 10:00",e:"ALLOW",r:"OK_IN_SCHEDULE"},
+ {t:"Employee at Office B after hours (23:30)",b:"USER_003",z:"ZONE_OFFICE_B",c:"Tue 23:30",e:"STEP_UP",r:"OUT_OF_HOURS_STEPUP"},
+ {t:"Employee tries the Server Room",b:"USER_003",z:"ZONE_SERVER_ROOM",c:"Tue 10:00",e:"DENY",r:"ZONE_NOT_AUTHORISED"},
+ {t:"Engineer at Office A, weekday 10:00",b:"USER_002",z:"ZONE_OFFICE_A",c:"Tue 10:00",e:"ALLOW",r:"OK_IN_SCHEDULE"},
+ {t:"Engineer at Office A on Saturday",b:"USER_002",z:"ZONE_OFFICE_A",c:"Sat 11:00",e:"STEP_UP",r:"OUT_OF_HOURS_STEPUP"},
+ {t:"Engineer at the Research Lab (high security)",b:"USER_002",z:"ZONE_LAB_RESEARCH",c:"Tue 10:00",e:"STEP_UP",r:"HIGH_RISK_2FA"},
+ {t:"Sysadmin at the Server Room, 03:00",b:"USER_001",z:"ZONE_SERVER_ROOM",c:"Wed 03:00",e:"STEP_UP",r:"HIGH_RISK_2FA"},
+ {t:"Executive at the Exec Suite, weekday",b:"USER_005",z:"ZONE_EXEC_SUITE",c:"Tue 10:00",e:"ALLOW",r:"OK_IN_SCHEDULE"},
+ {t:"Visitor at the entrance after 17:00",b:"USER_006",z:"ZONE_ENTRY_MAIN",c:"Tue 20:00",e:"STEP_UP",r:"OUT_OF_HOURS_STEPUP"},
+ {t:"Datacenter audit day: employee at the entrance",b:"USER_003",z:"ZONE_ENTRY_MAIN",c:"2026-11-20 10:00",e:"DENY",r:"CALENDAR_BLOCK"},
+ {t:"Datacenter audit day: sysadmin at the entrance",b:"USER_001",z:"ZONE_ENTRY_MAIN",c:"2026-11-20 10:00",e:"ALLOW",r:"OK_IN_SCHEDULE"},
+ {t:"Revoked badge",b:"USER_REVOKED",z:"ZONE_ENTRY_MAIN",c:"Tue 10:00",e:"DENY",r:"USER_REVOKED"}];
+const PHYS=[
+ {t:"Printed photo of the enrolled person",how:"Hold a printed photo of your face in front of the camera.",e:"DENY",r:"SPOOF_DETECTED"},
+ {t:"Photo shown on a phone screen",how:"Show a photo of your face on a phone/tablet.",e:"DENY",r:"SPOOF_DETECTED"},
+ {t:"Video replay on a phone/tablet",how:"Play a video of your face on a phone/tablet.",e:"DENY",r:"SPOOF_DETECTED"},
+ {t:"Mask (printed face / cut-out)",how:"Wear or hold a paper face mask / cut-out.",e:"DENY",r:"SPOOF_DETECTED"},
+ {t:"Someone else uses your badge",how:"Ask a teammate to look at the camera.",e:"DENY",r:"ID_MISMATCH"},
+ {t:"Poor light (cover the lamp / dim the room)",how:"Dim the light or turn away from it.",e:"STEP_UP",r:"LOW_CONFIDENCE"}];
+async function api(p,b){const r=await fetch(p,{method:b?'POST':'GET',headers:{'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined});let j={};try{j=await r.json()}catch(e){}
+ return j.detail&&typeof j.detail==='object'&&!j.outcome?{...j.detail,_status:r.status}:{...j,_status:r.status}}
+async function init(){try{const h=await api('/health');$('status').textContent='online · '+(h.region||'')+' · AWS Rekognition + B liveness model';
+ const c=await api('/config');$('badge').innerHTML=c.users.map(u=>`<option value="${u.id}">${u.id} · ${u.name} (${u.group.replace('GRP_','')})</option>`).join('');
+ $('zone').innerHTML=c.zones.map(z=>`<option value="${z.id}">${z.name} · ${z.risk}</option>`).join('');$('badge').value='USER_003';$('zone').value='ZONE_ENTRY_MAIN'}catch(e){$('status').textContent='backend not reachable'}
+ try{$('cam').srcObject=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480}})}catch(e){$('why').textContent='Camera unavailable: '+e.message}
+ $('ctx').innerHTML=CONTEXT.map((s,i)=>`<tr><td>${s.t}<div class="how">${s.b} · ${s.z.replace('ZONE_','')} · ${s.c}</div></td><td><span class="pill ${s.e}">${s.e.replace('_','-')}</span></td><td id="cr${i}">–</td><td><button class="sm" onclick="runCtx(${i})">Run</button></td></tr>`).join('');
+ $('phys').innerHTML=PHYS.map((s,i)=>`<tr><td>${s.t}<div class="how">${s.how}</div></td><td><span class="pill ${s.e}">${s.e.replace('_','-')}</span></td><td id="pr${i}">–</td><td><button class="sm" onclick="runPhys(${i})">Try</button></td></tr>`).join('')}
+function grab(cv){const v=$('cam');cv.width=480;cv.height=Math.round(480*v.videoHeight/v.videoWidth)||360;cv.getContext('2d').drawImage(v,0,0,cv.width,cv.height);return cv.toDataURL('image/jpeg',0.82)}
+async function burst(n=6,gap=80){const cv=document.createElement('canvas'),o=[];for(let i=0;i<n;i++){o.push(grab(cv));await sleep(gap)}return o}
+function show(res,ms){const o=res.outcome||'DENY';$('result').className='card '+o;$('outcome').textContent=o.replace('_','-');
+ $('why').innerHTML=(res.reasons||[res.error||'']).map(r=>WHY[r]||r).join('<br>');const t=res.timings||{},d=res.detail||{},kv=[];
+ if(ms!=null)kv.push(['Decision time',ms.toFixed(0)+' ms'+(ms<=2000?' ✓ ≤ 2 s':' ✗ over 2 s')]);
+ if(res.liveness!=null)kv.push(['Liveness',res.liveness.toFixed(2)]);if(res.similarity!=null)kv.push(['Identity match',res.similarity.toFixed(2)]);
+ if(d.spoof_prob!=null)kv.push(['Spoof probability',d.spoof_prob.toFixed(2)]);
+ if(t.total_ms!=null)kv.push(['Server time',t.total_ms.toFixed(0)+' ms (liveness '+(t.liveness_ms||0).toFixed(0)+', Rekognition '+(t.rekognition_ms||0).toFixed(0)+')']);
+ if(res.challenge&&res.challenge.colour)kv.push(['Colour sync',`score ${res.challenge.colour.score.toFixed(2)}, p=${res.challenge.colour.p_value.toFixed(3)}`]);
+ kv.push(['Reason codes',(res.reasons||[]).join(', ')]);$('kv').innerHTML=kv.map(([a,b])=>`<span>${a}</span><span>${b}</span>`).join('');
+ $('stepup').style.display=o==='STEP_UP'?'block':'none';
+ const tr=document.createElement('tr');tr.innerHTML=`<td>${new Date().toLocaleTimeString()}</td><td>${$('badge').value}</td><td>${$('zone').value.replace('ZONE_','')}</td><td><span class="pill ${o}">${o}</span></td><td>${ms!=null?ms.toFixed(0):''}</td>`;$('log').tBodies[0].prepend(tr)}
+// the nonce is fetched WHILE the burst is captured, so the timed path is only: upload -> verdict
+async function scanCore(){const [frames,sess]=await Promise.all([burst(),api('/session',{})]);const t0=performance.now();
+ const res=await api('/decide',{nonce:sess.nonce,frames,badge_id:$('badge').value,zone_id:$('zone').value,now:$('clock').value||null});return{res,ms:performance.now()-t0}}
+async function scan(){$('go').disabled=true;$('outcome').textContent='SCANNING…';$('result').className='card';
+ try{const {res,ms}=await scanCore();show(res,ms);return{res,ms}}catch(e){$('outcome').textContent='ERROR';$('why').textContent=String(e)}finally{$('go').disabled=false}}
+function judge(cellId,sc,out){const {res,ms}=out;const o=res.outcome||'DENY',rs=res.reasons||[];
+ const outcomeOk=o===sc.e, reasonOk=!sc.r||rs.includes(sc.r)||(sc.e==='DENY'&&sc.r==='SPOOF_DETECTED'&&o==='DENY');
+ const pass=outcomeOk&&(reasonOk||o!==sc.e);const full=outcomeOk&&reasonOk;
+ $(cellId).innerHTML=`<span class="${full?'ok':'bad'}">${full?'✓':'✗'}</span> <span class="pill ${o}">${o}</span> ${rs.join(', ')}<div class="how">${ms.toFixed(0)} ms${ms>2000?' ✗ over 2 s':''}</div>`;return full}
+async function runCtx(i){const s=CONTEXT[i];$('badge').value=s.b;$('zone').value=s.z;$('clock').value=s.c;const out=await scan();if(out)judge('cr'+i,s,out);return out}
+async function runPhys(i){const s=PHYS[i];$('badge').value='USER_003';$('zone').value='ZONE_ENTRY_MAIN';$('clock').value='Tue 10:00';
+ $('why').textContent=s.how;const c=$('count');c.style.display='flex';for(const n of [3,2,1]){c.textContent=n;await sleep(900)}c.style.display='none';
+ const out=await scan();if(out)judge('pr'+i,s,out)}
+$('runall').onclick=async()=>{$('runall').disabled=true;let ok=0;for(let i=0;i<CONTEXT.length;i++){const o=await runCtx(i);if(o&&judge('cr'+i,CONTEXT[i],o))ok++;await sleep(700)}
+ $('why').textContent=`Scenario run complete: ${ok}/${CONTEXT.length} matched the expected result.`;$('runall').disabled=false};
+$('go').onclick=scan;$('recap').onclick=scan;
+async function challenge(){$('chal').disabled=true;try{const ch=await api('/challenge',{});const names={red:'#ff2828',green:'#28ff28',blue:'#2828ff'};
+ const act=ch.action==='turn_left'?'LEFT':'RIGHT';const fl=$('flash'),cv=document.createElement('canvas');fl.style.display='flex';
+ $('flashmsg').textContent='Slowly turn your head to YOUR '+act+', then look back';const frames=[],t_ms=[],t0=performance.now(),total=ch.colors.length*ch.seg_ms+500;
+ while(performance.now()-t0<total){const t=performance.now()-t0;fl.style.background=names[ch.colors[Math.min(Math.floor(t/ch.seg_ms),ch.colors.length-1)]]+'cc';
+  frames.push(grab(cv));t_ms.push(Math.round(t));await sleep(70)}fl.style.display='none';
+ const t1=performance.now();const res=await api('/challenge/verify',{challenge_id:ch.id,frames,t_ms,badge_id:$('badge').value,zone_id:$('zone').value,now:$('clock').value||null});
+ show(res,performance.now()-t1)}catch(e){$('why').textContent=String(e);$('flash').style.display='none'}$('chal').disabled=false}
+$('chal').onclick=challenge;
+$('otpreq').onclick=async()=>{const r=await api('/generate-otp',{badge_id:$('badge').value});$('otphint').textContent='DEMO mode: code is '+r.code_for_demo+' (normally sent by email/SMS)'};
+$('otpbtn').onclick=async()=>{const r=await api('/verify-otp',{badge_id:$('badge').value,otp_code:$('otp').value});
+ const ok=r.status==='VERIFIED';show({outcome:ok?'ALLOW':(r.status==='LOCKED_OUT'?'DENY':'STEP_UP'),reasons:[ok?'STEPUP_OK':(r.status==='LOCKED_OUT'?'ATTEMPTS_EXCEEDED':'OTP_WRONG')]},null);$('why').textContent=r.message||''};
+const ADV={LOW_SHARPNESS:'Image too soft: move a bit closer, clean the lens, add light on your face.',LOW_BRIGHTNESS:'Too dark: face a light source.',EYES_CLOSED:'Keep your eyes open and look at the camera.',
+ OFF_ANGLE_POSE:'Face the camera straight on.',NO_FACE_DETECTED:'No face found: centre your face in view.',MULTIPLE_FACES_DETECTED:'Only one person in view, please.',FACE_NOT_INDEXED_BY_FILTER:'Frame rejected by the quality filter: try again with better light.'};
+async function enrolWith(url,body,okMsg){const cv=document.createElement('canvas');let last='',done=false;
+ for(let i=0;i<6&&!done;i++){$('result').className='card';$('outcome').textContent='ENROLLING…';$('why').textContent=`Hold still and look at the camera (${i+1}/6)`;
+  const r=await api(url,body(grab(cv).split(',')[1]));
+  if(r.success){done=true;$('result').className='card ALLOW';$('outcome').textContent='ENROLLED';$('why').textContent=okMsg(r);$('kv').innerHTML='';$('stepup').style.display='none'}
+  else{last=r.error||(typeof r.detail==='string'?r.detail:JSON.stringify(r));await sleep(400)}}
+ if(!done){const key=Object.keys(ADV).find(k=>String(last).startsWith(k));$('result').className='card DENY';$('outcome').textContent='NOT ENROLLED';$('why').innerHTML=(key?ADV[key]:last)+'<br><small>('+last+')</small>'}}
+$('enrol').onclick=async()=>{$('enrol').disabled=true;await enrolWith('/enroll',img=>({badge_id:$('badge').value,image_base64:img}),()=>`Enrolled ${$('badge').value}. You can scan now.`);$('enrol').disabled=false};
+$('enrolall').onclick=async()=>{$('enrolall').disabled=true;await enrolWith('/demo/enrol-all',img=>({image_base64:img}),r=>`Enrolled under ${r.enrolled.length} demo badges (${r.enrolled.join(', ')}). Scenarios are ready.`);$('enrolall').disabled=false};
+init();
+</script></body></html>

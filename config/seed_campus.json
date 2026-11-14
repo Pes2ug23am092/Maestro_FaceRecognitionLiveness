@@ -1,39 +1,637 @@
 {
   "zones": [
-    {"zone_id": "ZONE_ENTRY_MAIN", "name": "Main Entrance Turnstiles", "security_tier": 1},
-    {"zone_id": "ZONE_ENTRY_NORTH", "name": "North Gate Access", "security_tier": 1},
-    {"zone_id": "ZONE_OFFICE_A", "name": "Engineering Wing A", "security_tier": 2},
-    {"zone_id": "ZONE_OFFICE_B", "name": "Operations Wing B", "security_tier": 2},
-    {"zone_id": "ZONE_SERVER_ROOM", "name": "Primary Datacenter", "security_tier": 3},
-    {"zone_id": "ZONE_LAB_RESEARCH", "name": "Advanced Robotics Lab", "security_tier": 3},
-    {"zone_id": "ZONE_EXEC_SUITE", "name": "Executive Boardroom & Suites", "security_tier": 2},
-    {"zone_id": "ZONE_CAFETERIA", "name": "Campus Dining Area", "security_tier": 1}
+    {
+      "zone_id": "ZONE_ENTRY_MAIN",
+      "name": "Main Entrance Turnstiles",
+      "security_tier": 1
+    },
+    {
+      "zone_id": "ZONE_ENTRY_NORTH",
+      "name": "North Gate Access",
+      "security_tier": 1
+    },
+    {
+      "zone_id": "ZONE_OFFICE_A",
+      "name": "Engineering Wing A",
+      "security_tier": 2
+    },
+    {
+      "zone_id": "ZONE_OFFICE_B",
+      "name": "Operations Wing B",
+      "security_tier": 2
+    },
+    {
+      "zone_id": "ZONE_SERVER_ROOM",
+      "name": "Primary Datacenter",
+      "security_tier": 3
+    },
+    {
+      "zone_id": "ZONE_LAB_RESEARCH",
+      "name": "Advanced Robotics Lab",
+      "security_tier": 3
+    },
+    {
+      "zone_id": "ZONE_EXEC_SUITE",
+      "name": "Executive Boardroom & Suites",
+      "security_tier": 2
+    },
+    {
+      "zone_id": "ZONE_CAFETERIA",
+      "name": "Campus Dining Area",
+      "security_tier": 1
+    }
   ],
   "groups": [
-    {"group_id": "GRP_EMPLOYEE", "name": "Standard Employees", "default_tier": 1},
-    {"group_id": "GRP_ENGINEERING", "name": "Engineering Staff", "default_tier": 2},
-    {"group_id": "GRP_SYSADMIN", "name": "Datacenter & IT Administrators", "default_tier": 3},
-    {"group_id": "GRP_EXECUTIVE", "name": "Executive Leadership", "default_tier": 2},
-    {"group_id": "GRP_VISITOR", "name": "Registered Visitors", "default_tier": 1},
-    {"group_id": "GRP_SECURITY", "name": "Campus Physical Security", "default_tier": 3},
-    {"group_id": "GRP_CONTRACTOR", "name": "Maintenance Contractors", "default_tier": 1}
+    {
+      "group_id": "GRP_EMPLOYEE",
+      "name": "Standard Employees",
+      "default_tier": 1
+    },
+    {
+      "group_id": "GRP_ENGINEERING",
+      "name": "Engineering Staff",
+      "default_tier": 2
+    },
+    {
+      "group_id": "GRP_SYSADMIN",
+      "name": "Datacenter & IT Administrators",
+      "default_tier": 3
+    },
+    {
+      "group_id": "GRP_EXECUTIVE",
+      "name": "Executive Leadership",
+      "default_tier": 2
+    },
+    {
+      "group_id": "GRP_VISITOR",
+      "name": "Registered Visitors",
+      "default_tier": 1
+    },
+    {
+      "group_id": "GRP_SECURITY",
+      "name": "Campus Physical Security",
+      "default_tier": 3
+    },
+    {
+      "group_id": "GRP_CONTRACTOR",
+      "name": "Maintenance Contractors",
+      "default_tier": 1
+    }
   ],
   "schedules": [
-    {"schedule_id": "SCHED_ALL_HOURS", "group_id": "GRP_SYSADMIN", "zone_id": "ZONE_SERVER_ROOM", "days": ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"], "start_time": "00:00", "end_time": "23:59"},
-    {"schedule_id": "SCHED_ALL_SECURITY", "group_id": "GRP_SECURITY", "zone_id": "ZONE_SERVER_ROOM", "days": ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"], "start_time": "00:00", "end_time": "23:59"},
-    {"schedule_id": "SCHED_ENG_WORKHOURS", "group_id": "GRP_ENGINEERING", "zone_id": "ZONE_OFFICE_A", "days": ["MON", "TUE", "WED", "THU", "FRI"], "start_time": "07:00", "end_time": "21:00"},
-    {"schedule_id": "SCHED_ENG_LAB", "group_id": "GRP_ENGINEERING", "zone_id": "ZONE_LAB_RESEARCH", "days": ["MON", "TUE", "WED", "THU", "FRI"], "start_time": "08:00", "end_time": "19:00"},
-    {"schedule_id": "SCHED_EMP_ENTRY", "group_id": "GRP_EMPLOYEE", "zone_id": "ZONE_ENTRY_MAIN", "days": ["MON", "TUE", "WED", "THU", "FRI"], "start_time": "06:00", "end_time": "22:00"},
-    {"schedule_id": "SCHED_EMP_CAFE", "group_id": "GRP_EMPLOYEE", "zone_id": "ZONE_CAFETERIA", "days": ["MON", "TUE", "WED", "THU", "FRI"], "start_time": "07:00", "end_time": "19:00"}
+    {
+      "schedule_id": "SCHED_EMP_ENTRY",
+      "group_id": "GRP_EMPLOYEE",
+      "zone_id": "ZONE_ENTRY_MAIN",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "start_time": "00:00",
+      "end_time": "23:59"
+    },
+    {
+      "schedule_id": "SCHED_EMP_ENTRY_N",
+      "group_id": "GRP_EMPLOYEE",
+      "zone_id": "ZONE_ENTRY_NORTH",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT"
+      ],
+      "start_time": "06:00",
+      "end_time": "22:00"
+    },
+    {
+      "schedule_id": "SCHED_EMP_CAFE",
+      "group_id": "GRP_EMPLOYEE",
+      "zone_id": "ZONE_CAFETERIA",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "start_time": "07:00",
+      "end_time": "19:00"
+    },
+    {
+      "schedule_id": "SCHED_EMP_OFFICE_B",
+      "group_id": "GRP_EMPLOYEE",
+      "zone_id": "ZONE_OFFICE_B",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "start_time": "08:00",
+      "end_time": "19:00"
+    },
+    {
+      "schedule_id": "SCHED_ENG_ENTRY",
+      "group_id": "GRP_ENGINEERING",
+      "zone_id": "ZONE_ENTRY_MAIN",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "start_time": "00:00",
+      "end_time": "23:59"
+    },
+    {
+      "schedule_id": "SCHED_ENG_ENTRY_N",
+      "group_id": "GRP_ENGINEERING",
+      "zone_id": "ZONE_ENTRY_NORTH",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT"
+      ],
+      "start_time": "06:00",
+      "end_time": "22:00"
+    },
+    {
+      "schedule_id": "SCHED_ENG_CAFE",
+      "group_id": "GRP_ENGINEERING",
+      "zone_id": "ZONE_CAFETERIA",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "start_time": "07:00",
+      "end_time": "19:00"
+    },
+    {
+      "schedule_id": "SCHED_ENG_WORKHOURS",
+      "group_id": "GRP_ENGINEERING",
+      "zone_id": "ZONE_OFFICE_A",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "start_time": "07:00",
+      "end_time": "21:00"
+    },
+    {
+      "schedule_id": "SCHED_ENG_OFFICE_B",
+      "group_id": "GRP_ENGINEERING",
+      "zone_id": "ZONE_OFFICE_B",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "start_time": "07:00",
+      "end_time": "21:00"
+    },
+    {
+      "schedule_id": "SCHED_ENG_LAB",
+      "group_id": "GRP_ENGINEERING",
+      "zone_id": "ZONE_LAB_RESEARCH",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "start_time": "08:00",
+      "end_time": "19:00"
+    },
+    {
+      "schedule_id": "SCHED_SYS_ENTRY",
+      "group_id": "GRP_SYSADMIN",
+      "zone_id": "ZONE_ENTRY_MAIN",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "start_time": "00:00",
+      "end_time": "23:59"
+    },
+    {
+      "schedule_id": "SCHED_SYS_ENTRY_N",
+      "group_id": "GRP_SYSADMIN",
+      "zone_id": "ZONE_ENTRY_NORTH",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "start_time": "00:00",
+      "end_time": "23:59"
+    },
+    {
+      "schedule_id": "SCHED_SYS_CAFE",
+      "group_id": "GRP_SYSADMIN",
+      "zone_id": "ZONE_CAFETERIA",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "start_time": "07:00",
+      "end_time": "19:00"
+    },
+    {
+      "schedule_id": "SCHED_SYS_OFFICE_A",
+      "group_id": "GRP_SYSADMIN",
+      "zone_id": "ZONE_OFFICE_A",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "start_time": "00:00",
+      "end_time": "23:59"
+    },
+    {
+      "schedule_id": "SCHED_SYS_OFFICE_B",
+      "group_id": "GRP_SYSADMIN",
+      "zone_id": "ZONE_OFFICE_B",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "start_time": "00:00",
+      "end_time": "23:59"
+    },
+    {
+      "schedule_id": "SCHED_SYS_LAB",
+      "group_id": "GRP_SYSADMIN",
+      "zone_id": "ZONE_LAB_RESEARCH",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "start_time": "00:00",
+      "end_time": "23:59"
+    },
+    {
+      "schedule_id": "SCHED_ALL_HOURS",
+      "group_id": "GRP_SYSADMIN",
+      "zone_id": "ZONE_SERVER_ROOM",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "start_time": "00:00",
+      "end_time": "23:59"
+    },
+    {
+      "schedule_id": "SCHED_SEC_ENTRY",
+      "group_id": "GRP_SECURITY",
+      "zone_id": "ZONE_ENTRY_MAIN",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "start_time": "00:00",
+      "end_time": "23:59"
+    },
+    {
+      "schedule_id": "SCHED_SEC_ENTRY_N",
+      "group_id": "GRP_SECURITY",
+      "zone_id": "ZONE_ENTRY_NORTH",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "start_time": "00:00",
+      "end_time": "23:59"
+    },
+    {
+      "schedule_id": "SCHED_SEC_CAFE",
+      "group_id": "GRP_SECURITY",
+      "zone_id": "ZONE_CAFETERIA",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "start_time": "07:00",
+      "end_time": "19:00"
+    },
+    {
+      "schedule_id": "SCHED_SEC_OFFICE_A",
+      "group_id": "GRP_SECURITY",
+      "zone_id": "ZONE_OFFICE_A",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "start_time": "00:00",
+      "end_time": "23:59"
+    },
+    {
+      "schedule_id": "SCHED_SEC_OFFICE_B",
+      "group_id": "GRP_SECURITY",
+      "zone_id": "ZONE_OFFICE_B",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "start_time": "00:00",
+      "end_time": "23:59"
+    },
+    {
+      "schedule_id": "SCHED_ALL_SECURITY",
+      "group_id": "GRP_SECURITY",
+      "zone_id": "ZONE_SERVER_ROOM",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "start_time": "00:00",
+      "end_time": "23:59"
+    },
+    {
+      "schedule_id": "SCHED_EXEC_SUITE",
+      "group_id": "GRP_EXECUTIVE",
+      "zone_id": "ZONE_EXEC_SUITE",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "start_time": "07:00",
+      "end_time": "20:00"
+    },
+    {
+      "schedule_id": "SCHED_EXEC_ENTRY",
+      "group_id": "GRP_EXECUTIVE",
+      "zone_id": "ZONE_ENTRY_MAIN",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "start_time": "00:00",
+      "end_time": "23:59"
+    },
+    {
+      "schedule_id": "SCHED_EXEC_OFFICE_A",
+      "group_id": "GRP_EXECUTIVE",
+      "zone_id": "ZONE_OFFICE_A",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "start_time": "07:00",
+      "end_time": "21:00"
+    },
+    {
+      "schedule_id": "SCHED_EXEC_OFFICE_B",
+      "group_id": "GRP_EXECUTIVE",
+      "zone_id": "ZONE_OFFICE_B",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "start_time": "07:00",
+      "end_time": "21:00"
+    },
+    {
+      "schedule_id": "SCHED_EXEC_CAFE",
+      "group_id": "GRP_EXECUTIVE",
+      "zone_id": "ZONE_CAFETERIA",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI",
+        "SAT",
+        "SUN"
+      ],
+      "start_time": "07:00",
+      "end_time": "19:00"
+    },
+    {
+      "schedule_id": "SCHED_VIS_ENTRY",
+      "group_id": "GRP_VISITOR",
+      "zone_id": "ZONE_ENTRY_MAIN",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "start_time": "09:00",
+      "end_time": "17:00"
+    },
+    {
+      "schedule_id": "SCHED_VIS_CAFE",
+      "group_id": "GRP_VISITOR",
+      "zone_id": "ZONE_CAFETERIA",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "start_time": "11:00",
+      "end_time": "14:00"
+    },
+    {
+      "schedule_id": "SCHED_CON_ENTRY_N",
+      "group_id": "GRP_CONTRACTOR",
+      "zone_id": "ZONE_ENTRY_NORTH",
+      "days": [
+        "MON",
+        "TUE",
+        "WED",
+        "THU",
+        "FRI"
+      ],
+      "start_time": "08:00",
+      "end_time": "18:00"
+    }
   ],
   "calendar": [
-    {"event_id": "CAL_HOLIDAY_NEWYEAR", "date": "2026-01-01", "name": "New Year Day", "access_override": "WEEKEND_SCHEDULE"},
-    {"event_id": "CAL_MAINTENANCE_WINDOW", "date": "2026-11-20", "name": "Datacenter Audit", "access_override": "ADMIN_ONLY"}
+    {
+      "event_id": "CAL_HOLIDAY_NEWYEAR",
+      "date": "2026-01-01",
+      "name": "New Year Day",
+      "access_override": "WEEKEND_SCHEDULE"
+    },
+    {
+      "event_id": "CAL_MAINTENANCE_WINDOW",
+      "date": "2026-11-20",
+      "name": "Datacenter Audit",
+      "access_override": "ADMIN_ONLY"
+    }
   ],
   "users": [
-    {"badge_id": "USER_001", "name": "Alice Chen", "group_id": "GRP_SYSADMIN", "status": "active", "valid_from": "2026-01-01T00:00:00Z", "valid_to": "2027-01-01T00:00:00Z"},
-    {"badge_id": "USER_002", "name": "Bob Smith", "group_id": "GRP_ENGINEERING", "status": "active", "valid_from": "2026-01-01T00:00:00Z", "valid_to": "2027-01-01T00:00:00Z"},
-    {"badge_id": "USER_003", "name": "Charlie Patel", "group_id": "GRP_EMPLOYEE", "status": "active", "valid_from": "2026-01-01T00:00:00Z", "valid_to": "2027-01-01T00:00:00Z"},
-    {"badge_id": "USER_REVOKED", "name": "Eve Mallory", "group_id": "GRP_EMPLOYEE", "status": "revoked", "valid_from": "2026-01-01T00:00:00Z", "valid_to": "2026-06-01T00:00:00Z"}
+    {
+      "badge_id": "USER_001",
+      "name": "Alice Chen",
+      "group_id": "GRP_SYSADMIN",
+      "status": "active",
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_to": "2027-01-01T00:00:00Z"
+    },
+    {
+      "badge_id": "USER_002",
+      "name": "Bob Smith",
+      "group_id": "GRP_ENGINEERING",
+      "status": "active",
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_to": "2027-01-01T00:00:00Z"
+    },
+    {
+      "badge_id": "USER_003",
+      "name": "Charlie Patel",
+      "group_id": "GRP_EMPLOYEE",
+      "status": "active",
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_to": "2027-01-01T00:00:00Z"
+    },
+    {
+      "badge_id": "USER_REVOKED",
+      "name": "Eve Mallory",
+      "group_id": "GRP_EMPLOYEE",
+      "status": "revoked",
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_to": "2026-06-01T00:00:00Z"
+    },
+    {
+      "badge_id": "USER_004",
+      "name": "Dana Ortiz (Security)",
+      "group_id": "GRP_SECURITY",
+      "status": "active",
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_to": "2027-01-01T00:00:00Z"
+    },
+    {
+      "badge_id": "USER_005",
+      "name": "Evan Park (Executive)",
+      "group_id": "GRP_EXECUTIVE",
+      "status": "active",
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_to": "2027-01-01T00:00:00Z"
+    },
+    {
+      "badge_id": "USER_006",
+      "name": "Vic Visitor",
+      "group_id": "GRP_VISITOR",
+      "status": "active",
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_to": "2027-01-01T00:00:00Z"
+    },
+    {
+      "badge_id": "USER_007",
+      "name": "Con Tractor",
+      "group_id": "GRP_CONTRACTOR",
+      "status": "active",
+      "valid_from": "2026-01-01T00:00:00Z",
+      "valid_to": "2027-01-01T00:00:00Z"
+    }
   ]
 }

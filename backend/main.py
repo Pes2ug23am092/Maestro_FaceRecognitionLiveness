@@ -74,8 +74,12 @@ class SyncBatchRequest(BaseModel):
 
 @app.on_event("startup")
 def _warm():
-    from backend.decide_service import warm_up
+    import os
+    import threading
+    from backend.decide_service import keep_warm_loop, warm_up
     print("[startup] warm-up:", warm_up())
+    if not os.getenv("AWS_LAMBDA_FUNCTION_NAME"):  # idle AWS connections go cold; keep them warm on a long-lived server
+        threading.Thread(target=keep_warm_loop, daemon=True).start()
 
 
 @app.get("/health")
