@@ -45,3 +45,8 @@
 ## [2026-11-14 15:50] [B] Deployed to AWS (Lambda + API Gateway + S3 deps + EventBridge + CloudWatch)
 - URL https://i9as63zk3e.execute-api.us-east-1.amazonaws.com/kiosk . Zip + S3 (Docker push failed). Created: IAM role hidb-kiosk-lambda-role, Lambda hidb-kiosk-backend, HTTP API, EventBridge rule, log group, dashboard hidb-kiosk, S3 objects hidb/deps*.zip, empty ECR repo. OTP moved to DynamoDB.
 - e2e on the deployed API: all cases correct, lockout works, server 175-390 ms, cold 6 s. API is unauthenticated: restrict or delete after the demo.
+
+
+## [2026-11-14 16:55] [B] Screenshots + README
+- Captured 12 real screenshots of the deployed website (Chrome + Playwright, fake camera from CASIA frames, video blurred, demo faces added then removed/restored): ALLOW, STEP-UP (after hours, high-risk door), DENY (door, audit day, printed photo, video replay, lockout), OTP verified, 12/12 scenario run. Wrote professional README.md; added models/train, models/collect, models/tests, docs/DATASETS.md, docs/OFFLINE_FALLBACK.md, tools/capture_screenshots.py.
+- Found: CASIA train_img/test_img reuse subject numbers for different people (see docs/INTEGRATION.md); earlier per-clip pipeline numbers are indicative only. Split itself is leak-free.
