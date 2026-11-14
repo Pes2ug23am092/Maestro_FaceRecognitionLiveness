@@ -1,0 +1,17 @@
+{
+  "REGION": "us-east-1",
+  "ACCOUNT_ID": "891377320041",
+  "BUCKET_NAME": "kiosk-evidence-891377320041-us-east-1",
+  "COLLECTION_ID": "kiosk-face-collection-v1",
+  "KMS_KEY_ALIAS": "alias/kiosk-policy-signer",
+  "KMS_KEY_ID": "2c9a15c1-f16d-4312-862a-8f21c55f8837",
+  "TABLES": {
+    "kiosk_users": "kiosk_users",
+    "kiosk_sessions": "kiosk_sessions",
+    "kiosk_decisions": "kiosk_decisions",
+    "kiosk_sync_batches": "kiosk_sync_batches",
+    "kiosk_zones": "kiosk_zones",
+    "kiosk_groups": "kiosk_groups",
+    "kiosk_schedules": "kiosk_schedules"
+  }
+}

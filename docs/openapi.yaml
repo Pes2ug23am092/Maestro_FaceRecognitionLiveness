@@ -1,0 +1,343 @@
+openapi: 3.0.3
+info:
+  title: HID Face Liveness & Authentication Kiosk Backend API
+  description: |
+    Cloud Backend API contract for Member A (Cloud/Backend Lead).
+    Covers online authentication, 1:1 facial identity verification,
+    step-up OTP verification, offline signed policy bundles, and idempotent sync.
+  version: 1.0.0
+
+servers:
+  - url: /api/v1
+    description: Base API Gateway Stage
+
+paths:
+  /health:
+    get:
+      summary: Health check endpoint
+      operationId: getHealth
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "healthy"
+                  service:
+                    type: string
+                    example: "kiosk-auth-backend"
+
+  /session:
+    post:
+      summary: Request a one-time single-use nonce for kiosk interaction
+      operationId: createSession
+      responses:
+        '200':
+          description: Nonce created with a 30-second TTL
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - nonce
+                  - expires_at
+                properties:
+                  nonce:
+                    type: string
+                    example: "c7f28a9b-4e12-4cf0-84a1-00129bc78ae4"
+                  expires_at:
+                    type: integer
+                    description: Epoch timestamp (seconds)
+                    example: 1710000030
+
+  /decide:
+    post:
+      summary: Perform liveness verification, identity match, and zone access decision
+      operationId: decideAccess
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - nonce
+                - frames
+                - badge_id
+                - zone_id
+              properties:
+                nonce:
+                  type: string
+                  description: Nonce issued from POST /session (must be valid, unexpired, and unused)
+                frames:
+                  type: array
+                  items:
+                    type: string
+                  description: Array of Base64-encoded image frames captured at the kiosk
+                badge_id:
+                  type: string
+                  example: "USER_001"
+                zone_id:
+                  type: string
+                  example: "ZONE_CAMPUS_MAIN"
+      responses:
+        '200':
+          description: Decision result
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - outcome
+                  - liveness
+                  - similarity
+                  - tier
+                  - reasons
+                  - mode
+                  - timings
+                properties:
+                  outcome:
+                    type: string
+                    enum: [ALLOW, STEP_UP, DENY]
+                    example: "ALLOW"
+                  liveness:
+                    type: number
+                    format: float
+                    example: 0.97
+                  similarity:
+                    type: number
+                    format: float
+                    example: 0.93
+                  tier:
+                    type: integer
+                    example: 1
+                  reasons:
+                    type: array
+                    items:
+                      type: string
+                    example: ["OK_IN_SCHEDULE", "MATCH_CONFIRMED"]
+                  mode:
+                    type: string
+                    enum: [online, offline]
+                    example: "online"
+                  timings:
+                    type: object
+                    properties:
+                      upload_ms:
+                        type: number
+                      rekognition_ms:
+                        type: number
+                      fusion_ms:
+                        type: number
+                      total_ms:
+                        type: number
+        '400':
+          description: Invalid, expired, or reused nonce
+        '403':
+          description: Locked out or access forbidden
+
+  /verify-otp:
+    post:
+      summary: Verify step-up one-time passcode for high-security or uncertain matches
+      operationId: verifyOtp
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - badge_id
+                - kiosk_id
+                - otp_code
+              properties:
+                badge_id:
+                  type: string
+                  example: "USER_001"
+                kiosk_id:
+                  type: string
+                  example: "KIOSK_NORTH_01"
+                otp_code:
+                  type: string
+                  example: "849201"
+      responses:
+        '200':
+          description: Verification outcome
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+                    enum: [VERIFIED, INVALID, LOCKED_OUT]
+                  attempts_left:
+                    type: integer
+                    example: 2
+
+  /policy-bundle:
+    get:
+      summary: Retrieve the latest cryptographically signed offline policy bundle
+      operationId: getPolicyBundle
+      responses:
+        '200':
+          description: Active policies and revocation list signed with KMS ECDSA
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - bundle_version
+                  - expires_at
+                  - groups
+                  - zones
+                  - schedules
+                  - revocations
+                  - signature
+                  - signature_format
+                  - public_key
+                properties:
+                  bundle_version:
+                    type: string
+                  expires_at:
+                    type: string
+                    format: date-time
+                  groups:
+                    type: array
+                    items:
+                      type: object
+                  zones:
+                    type: array
+                    items:
+                      type: object
+                  schedules:
+                    type: array
+                    items:
+                      type: object
+                  revocations:
+                    type: array
+                    items:
+                      type: string
+                  signature:
+                    type: string
+                    description: Raw IEEE P1363 (r||s) base64 string for WebCrypto verification
+                  signature_format:
+                    type: string
+                    example: "raw_rs_base64"
+                  public_key:
+                    type: string
+                    description: PEM or SPKI base64 format
+
+  /credential:
+    post:
+      summary: Issue a short-lived signed credential token for offline kiosk validation
+      operationId: issueCredential
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - badge_id
+              properties:
+                badge_id:
+                  type: string
+                  example: "USER_001"
+      responses:
+        '200':
+          description: Signed credential pass
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - badge_id
+                  - zone_grants
+                  - expires_at
+                  - signature
+                properties:
+                  badge_id:
+                    type: string
+                  zone_grants:
+                    type: array
+                    items:
+                      type: string
+                  expires_at:
+                    type: string
+                  signature:
+                    type: string
+
+  /sync:
+    post:
+      summary: Submit offline audit logs and reconcile status idempotently
+      operationId: syncAuditEvents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - kiosk_id
+                - batch_id
+                - events
+              properties:
+                kiosk_id:
+                  type: string
+                  example: "KIOSK_NORTH_01"
+                batch_id:
+                  type: string
+                  example: "BATCH_20261114_001"
+                events:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - event_id
+                      - seq
+                      - ts
+                      - outcome
+                    properties:
+                      event_id:
+                        type: string
+                      seq:
+                        type: integer
+                      ts:
+                        type: string
+                      user_hash:
+                        type: string
+                      outcome:
+                        type: string
+                      prev_hash:
+                        type: string
+                      hash:
+                        type: string
+      responses:
+        '200':
+          description: Sync batch acknowledged
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                  - acknowledged_event_ids
+                properties:
+                  status:
+                    type: string
+                    example: "ACK"
+                  acknowledged_event_ids:
+                    type: array
+                    items:
+                      type: string
+                  reconciled_alerts:
+                    type: array
+                    items:
+                      type: object
