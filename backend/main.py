@@ -2,7 +2,7 @@ import os
 import base64
 import secrets
 import boto3
-from fastapi import FastAPI, HTTPException, File, UploadFile, Form
+from fastapi import FastAPI, HTTPException, Request, File, UploadFile, Form
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import List, Optional, Any
@@ -78,14 +78,51 @@ def post_session():
     return create_session()
 
 @app.post("/decide")
-def post_decide(req: DecideRequest):
+async def post_decide(request: Request):
+    content_type = request.headers.get("content-type", "")
+    
+    if "multipart/form-data" in content_type:
+        form = await request.form()
+        badge_id = str(form.get("badge_id", ""))
+        nonce = str(form.get("nonce", ""))
+        zone_id = str(form.get("zone_id", "ZONE_ENTRY_MAIN"))
+        kiosk_id = str(form.get("kiosk_id", "KIOSK_MAIN"))
+        frame_file = form.get("frame")
+        if not frame_file or not hasattr(frame_file, "read"):
+            raise HTTPException(status_code=400, detail="Missing 'frame' image in multipart data")
+        image_bytes = await frame_file.read()
+        frame_b64 = base64.b64encode(image_bytes).decode("utf-8")
+        frames = [frame_b64]
+    else:
+        body = await request.json()
+        req = DecideRequest(**body)
+        nonce = req.nonce
+        frames = req.frames
+        badge_id = req.badge_id
+        zone_id = req.zone_id
+        kiosk_id = req.kiosk_id or "KIOSK_MAIN"
+
     code, payload = decide_access(
-        nonce=req.nonce,
-        frames=req.frames,
-        badge_id=req.badge_id,
-        zone_id=req.zone_id,
-        kiosk_id=req.kiosk_id or "KIOSK_MAIN"
+        nonce=nonce,
+        frames=frames,
+        badge_id=badge_id,
+        zone_id=zone_id,
+        kiosk_id=kiosk_id
     )
+
+    if code == 200:
+        # Augment payload with fields expected by Member C's Streamlit _normalize_decision
+        outcome_map = {
+            "ALLOW": "ALLOW",
+            "STEP_UP": "REQUEST VERIFICATION",
+            "DENY": "DENY"
+        }
+        payload["decision"] = outcome_map.get(payload.get("outcome", "DENY"), "DENY")
+        reasons_list = payload.get("reasons", [])
+        payload["reason"] = ", ".join(reasons_list) if reasons_list else "Access evaluation completed"
+        payload["message"] = payload["reason"]
+        payload["confidence"] = payload.get("liveness", 0.95)
+
     if code != 200:
         raise HTTPException(status_code=code, detail=payload)
     return payload
@@ -135,32 +172,7 @@ def post_enroll(req: EnrollRequest):
 # Multipart / Frontend-compatible endpoints (Streamlit uses multipart)
 # ---------------------------------------------------------------------------
 
-@app.post("/decide-multipart")
-async def post_decide_multipart(
-    badge_id: str = Form(...),
-    nonce: str = Form(...),
-    zone_id: str = Form("ZONE_ENTRY_MAIN"),
-    kiosk_id: str = Form("KIOSK_MAIN"),
-    frame: UploadFile = File(...),
-):
-    """Multipart/form-data decide endpoint for Streamlit frontend compatibility."""
-    image_bytes = await frame.read()
-    frame_b64 = base64.b64encode(image_bytes).decode("utf-8")
-    code, payload = decide_access(
-        nonce=nonce,
-        frames=[frame_b64],
-        badge_id=badge_id,
-        zone_id=zone_id,
-        kiosk_id=kiosk_id,
-    )
-    if code == 200:
-        outcome_map = {"ALLOW": "ALLOW", "STEP_UP": "REQUEST VERIFICATION", "DENY": "DENY"}
-        payload["decision"] = outcome_map.get(payload.get("outcome", "DENY"), "DENY")
-        payload["message"] = ", ".join(payload.get("reasons", []))
-        payload["confidence"] = payload.get("liveness", 0.95)
-    if code not in (200,):
-        raise HTTPException(status_code=code, detail=payload)
-    return payload
+
 
 
 @app.post("/challenge/verify")
