@@ -1,0 +1,74 @@
+{
+  "schema_version": 1,
+  "synthetic_only": true,
+  "timezone": "America/New_York",
+  "bundle": {
+    "signatureValid": true,
+    "issuedAt": "2026-11-16T00:00:00.000Z",
+    "expiresAt": "2026-11-17T00:00:00.000Z",
+    "maxClockDriftMs": 120000
+  },
+  "thresholds": {
+    "low": { "liveAllow": 0.90, "liveDeny": 0.30, "simAllow": 0.80, "simDeny": 0.50, "offlineLiveAllow": 0.96 },
+    "medium": { "liveAllow": 0.95, "liveDeny": 0.35, "simAllow": 0.85, "simDeny": 0.55, "offlineLiveAllow": 0.98 },
+    "high": { "liveAllow": 0.98, "liveDeny": 0.50, "simAllow": 0.90, "simDeny": 0.65, "offlineLiveAllow": 0.995 }
+  },
+  "zones": [
+    { "id": "Library", "risk": "low", "allowedGroups": ["student", "faculty", "staff", "admin"] },
+    { "id": "Admin-Office", "risk": "low", "allowedGroups": ["staff", "admin", "security", "contractor", "visitor"] },
+    { "id": "Dining-Hall", "risk": "low", "allowedGroups": ["student", "faculty", "staff"] },
+    { "id": "Lab-1", "risk": "medium", "allowedGroups": ["faculty", "contractor"] },
+    { "id": "Classroom-2", "risk": "medium", "allowedGroups": ["student", "faculty", "admin"] },
+    { "id": "Workshop", "risk": "medium", "allowedGroups": ["faculty", "staff", "contractor", "admin"] },
+    { "id": "Server-Room", "risk": "high", "allowedGroups": ["admin", "security"] },
+    { "id": "Network-Core", "risk": "high", "allowedGroups": ["admin", "security"] }
+  ],
+  "groups": ["student", "faculty", "staff", "admin", "security", "contractor", "visitor"],
+  "schedules": [
+    { "group": "student", "zoneId": "Library", "daysOfWeek": [1, 2, 3, 4, 5], "windows": [{ "start": "08:00", "end": "18:00" }] },
+    { "group": "faculty", "zoneId": "Library", "daysOfWeek": [1, 2, 3, 4, 5], "windows": [{ "start": "06:00", "end": "22:00" }] },
+    { "group": "staff", "zoneId": "Library", "daysOfWeek": [1, 2, 3, 4, 5], "windows": [{ "start": "06:00", "end": "20:00" }] },
+    { "group": "admin", "zoneId": "Library", "daysOfWeek": [0, 1, 2, 3, 4, 5, 6], "windows": [{ "start": "00:00", "end": "24:00" }] },
+    { "group": "staff", "zoneId": "Admin-Office", "daysOfWeek": [1, 2, 3, 4, 5], "windows": [{ "start": "07:00", "end": "19:00" }] },
+    { "group": "admin", "zoneId": "Admin-Office", "daysOfWeek": [0, 1, 2, 3, 4, 5, 6], "windows": [{ "start": "00:00", "end": "24:00" }] },
+    { "group": "security", "zoneId": "Admin-Office", "daysOfWeek": [0, 1, 2, 3, 4, 5, 6], "windows": [{ "start": "00:00", "end": "24:00" }] },
+    { "group": "contractor", "zoneId": "Admin-Office", "daysOfWeek": [1, 2, 3, 4, 5], "windows": [{ "start": "08:00", "end": "17:00" }] },
+    { "group": "visitor", "zoneId": "Admin-Office", "daysOfWeek": [1, 2, 3, 4, 5], "windows": [{ "start": "08:00", "end": "18:00" }], "startsOn": "2026-11-16", "endsOn": "2026-11-17", "requiresEscort": true },
+    { "group": "student", "zoneId": "Dining-Hall", "daysOfWeek": [1, 2, 3, 4, 5], "windows": [{ "start": "07:00", "end": "20:00" }] },
+    { "group": "faculty", "zoneId": "Dining-Hall", "daysOfWeek": [1, 2, 3, 4, 5], "windows": [{ "start": "07:00", "end": "20:00" }] },
+    { "group": "staff", "zoneId": "Dining-Hall", "daysOfWeek": [1, 2, 3, 4, 5], "windows": [{ "start": "06:00", "end": "21:00" }] },
+    { "group": "faculty", "zoneId": "Lab-1", "daysOfWeek": [1, 2, 3, 4, 5], "windows": [{ "start": "08:00", "end": "18:00" }] },
+    { "group": "contractor", "zoneId": "Lab-1", "daysOfWeek": [1, 2, 3, 4, 5], "windows": [{ "start": "08:00", "end": "17:00" }] },
+    { "group": "student", "zoneId": "Classroom-2", "daysOfWeek": [1, 2, 3, 4, 5], "windows": [{ "start": "08:00", "end": "18:00" }] },
+    { "group": "faculty", "zoneId": "Classroom-2", "daysOfWeek": [1, 2, 3, 4, 5], "windows": [{ "start": "06:00", "end": "22:00" }] },
+    { "group": "admin", "zoneId": "Classroom-2", "daysOfWeek": [0, 1, 2, 3, 4, 5, 6], "windows": [{ "start": "00:00", "end": "24:00" }] },
+    { "group": "faculty", "zoneId": "Workshop", "daysOfWeek": [1, 2, 3, 4, 5], "windows": [{ "start": "07:00", "end": "20:00" }] },
+    { "group": "staff", "zoneId": "Workshop", "daysOfWeek": [1, 2, 3, 4, 5], "windows": [{ "start": "07:00", "end": "19:00" }] },
+    { "group": "contractor", "zoneId": "Workshop", "daysOfWeek": [1, 2, 3, 4, 5], "windows": [{ "start": "08:00", "end": "17:00" }] },
+    { "group": "admin", "zoneId": "Workshop", "daysOfWeek": [0, 1, 2, 3, 4, 5, 6], "windows": [{ "start": "00:00", "end": "24:00" }] },
+    { "group": "admin", "zoneId": "Server-Room", "daysOfWeek": [0, 1, 2, 3, 4, 5, 6], "windows": [{ "start": "00:00", "end": "24:00" }] },
+    { "group": "security", "zoneId": "Server-Room", "daysOfWeek": [0, 1, 2, 3, 4, 5, 6], "windows": [{ "start": "00:00", "end": "24:00" }] },
+    { "group": "admin", "zoneId": "Network-Core", "daysOfWeek": [0, 1, 2, 3, 4, 5, 6], "windows": [{ "start": "00:00", "end": "24:00" }] },
+    { "group": "security", "zoneId": "Network-Core", "daysOfWeek": [0, 1, 2, 3, 4, 5, 6], "windows": [{ "start": "00:00", "end": "24:00" }] }
+  ],
+  "calendar": [
+    { "id": "EXAM-2026-11-20", "date": "2026-11-20", "type": "exam", "appliesToGroups": ["student"], "appliesToZones": ["Classroom-2", "Lab-1"] },
+    { "id": "LOCKDOWN-2026-11-23", "date": "2026-11-23", "type": "lockdown", "stepUpGroups": ["admin", "security"] },
+    { "id": "HOLIDAY-2026-11-26", "date": "2026-11-26", "type": "holiday" },
+    { "id": "HOLIDAY-2026-12-25", "date": "2026-12-25", "type": "holiday" }
+  ],
+  "users": [
+    { "id": "demo-student-01", "group": "student", "status": "active", "validFrom": "2026-01-01T00:00:00.000Z", "validUntil": "2027-01-01T00:00:00.000Z", "credentialValid": true },
+    { "id": "demo-faculty-01", "group": "faculty", "status": "active", "validFrom": "2026-01-01T00:00:00.000Z", "validUntil": "2027-01-01T00:00:00.000Z", "credentialValid": true },
+    { "id": "demo-staff-01", "group": "staff", "status": "active", "validFrom": "2026-01-01T00:00:00.000Z", "validUntil": "2027-01-01T00:00:00.000Z", "credentialValid": true },
+    { "id": "demo-admin-01", "group": "admin", "status": "active", "validFrom": "2026-01-01T00:00:00.000Z", "validUntil": "2027-01-01T00:00:00.000Z", "credentialValid": true },
+    { "id": "demo-security-01", "group": "security", "status": "active", "validFrom": "2026-01-01T00:00:00.000Z", "validUntil": "2027-01-01T00:00:00.000Z", "credentialValid": true },
+    { "id": "demo-contractor-01", "group": "contractor", "status": "active", "validFrom": "2026-11-01T00:00:00.000Z", "validUntil": "2026-12-01T00:00:00.000Z", "credentialValid": true },
+    { "id": "demo-visitor-01", "group": "visitor", "status": "active", "validFrom": "2026-11-16T00:00:00.000Z", "validUntil": "2026-11-17T00:00:00.000Z", "credentialValid": true },
+    { "id": "demo-suspended-01", "group": "student", "status": "suspended", "validFrom": "2026-01-01T00:00:00.000Z", "validUntil": "2027-01-01T00:00:00.000Z", "credentialValid": true },
+    { "id": "demo-expired-contractor-01", "group": "contractor", "status": "expired", "validFrom": "2025-01-01T00:00:00.000Z", "validUntil": "2026-01-01T00:00:00.000Z", "credentialValid": false },
+    { "id": "demo-one-day-visitor-01", "group": "visitor", "status": "active", "validFrom": "2026-11-16T00:00:00.000Z", "validUntil": "2026-11-17T00:00:00.000Z", "credentialValid": true },
+    { "id": "demo-student-02", "group": "student", "status": "active", "validFrom": "2026-01-01T00:00:00.000Z", "validUntil": "2027-01-01T00:00:00.000Z", "credentialValid": true },
+    { "id": "demo-staff-02", "group": "staff", "status": "active", "validFrom": "2026-01-01T00:00:00.000Z", "validUntil": "2027-01-01T00:00:00.000Z", "credentialValid": true }
+  ]
+}

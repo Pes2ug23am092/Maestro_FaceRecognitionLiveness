@@ -1,0 +1,50 @@
+{
+  "schema_version": 1,
+  "matrix": {
+    "at": "2026-11-16T15:00:00.000Z",
+    "zoneIds": ["Library", "Admin-Office", "Dining-Hall", "Lab-1", "Classroom-2", "Workshop", "Server-Room", "Network-Core"],
+    "groups": [
+      { "group": "student", "userId": "demo-student-01", "permittedZones": ["Library", "Dining-Hall", "Classroom-2"] },
+      { "group": "faculty", "userId": "demo-faculty-01", "permittedZones": ["Library", "Dining-Hall", "Lab-1", "Classroom-2", "Workshop"] },
+      { "group": "staff", "userId": "demo-staff-01", "permittedZones": ["Library", "Admin-Office", "Dining-Hall", "Workshop"] },
+      { "group": "admin", "userId": "demo-admin-01", "permittedZones": ["Library", "Admin-Office", "Classroom-2", "Workshop", "Server-Room", "Network-Core"] },
+      { "group": "security", "userId": "demo-security-01", "permittedZones": ["Admin-Office", "Server-Room", "Network-Core"] },
+      { "group": "contractor", "userId": "demo-contractor-01", "permittedZones": ["Admin-Office", "Lab-1", "Workshop"] },
+      { "group": "visitor", "userId": "demo-visitor-01", "permittedZones": ["Admin-Office"], "requiresEscort": true }
+    ],
+    "expected": {
+      "allowed": { "outcome": "ALLOW", "reason": "OK_IN_SCHEDULE" },
+      "highRisk": { "outcome": "STEP_UP", "reason": "HIGH_RISK_2FA" },
+      "escort": { "outcome": "STEP_UP", "reason": "VISITOR_ESCORT_STEPUP" },
+      "unauthorized": { "outcome": "DENY", "reason": "ZONE_NOT_AUTHORISED" }
+    }
+  },
+  "cases": [
+    { "id": "S01-window-start-inclusive", "userId": "demo-student-01", "zoneId": "Library", "at": "2026-11-16T13:00:00.000Z", "expected": ["ALLOW", "OK_IN_SCHEDULE"] },
+    { "id": "S02-before-window-stepup", "userId": "demo-student-01", "zoneId": "Library", "at": "2026-11-16T12:59:00.000Z", "expected": ["STEP_UP", "OUT_OF_HOURS_STEPUP"] },
+    { "id": "S03-window-end-exclusive", "userId": "demo-student-01", "zoneId": "Library", "at": "2026-11-16T23:00:00.000Z", "expected": ["STEP_UP", "OUT_OF_HOURS_STEPUP"] },
+    { "id": "S04-low-confidence-outside-window", "userId": "demo-student-01", "zoneId": "Library", "at": "2026-11-16T12:59:00.000Z", "biometric": "uncertain", "expected": ["DENY", "LOW_CONF_OUT_OF_HOURS"] },
+    { "id": "S05-spoof-veto", "userId": "demo-student-01", "zoneId": "Library", "at": "2026-11-16T15:00:00.000Z", "biometric": "spoof", "expected": ["DENY", "SPOOF_DETECTED"] },
+    { "id": "S06-identity-mismatch", "userId": "demo-student-01", "zoneId": "Library", "at": "2026-11-16T15:00:00.000Z", "biometric": "mismatch", "expected": ["DENY", "ID_MISMATCH"] },
+    { "id": "S07-poor-quality-stepup", "userId": "demo-student-01", "zoneId": "Library", "at": "2026-11-16T15:00:00.000Z", "biometric": "poorQuality", "expected": ["STEP_UP", "LOW_CONFIDENCE"] },
+    { "id": "S08-zone-not-granted", "userId": "demo-student-01", "zoneId": "Admin-Office", "at": "2026-11-16T15:00:00.000Z", "expected": ["DENY", "ZONE_NOT_AUTHORISED"] },
+    { "id": "S09-holiday-calendar-block", "userId": "demo-student-01", "zoneId": "Library", "at": "2026-11-26T15:00:00.000Z", "expected": ["DENY", "CALENDAR_BLOCK"] },
+    { "id": "S10-exam-calendar-block", "userId": "demo-student-01", "zoneId": "Classroom-2", "at": "2026-11-20T15:00:00.000Z", "expected": ["DENY", "CALENDAR_BLOCK"] },
+    { "id": "S11-visitor-escort", "userId": "demo-visitor-01", "zoneId": "Admin-Office", "at": "2026-11-16T15:00:00.000Z", "expected": ["STEP_UP", "VISITOR_ESCORT_STEPUP"] },
+    { "id": "S12-suspended-user", "userId": "demo-suspended-01", "zoneId": "Library", "at": "2026-11-16T15:00:00.000Z", "expected": ["DENY", "USER_SUSPENDED"] },
+    { "id": "S13-expired-contractor", "userId": "demo-expired-contractor-01", "zoneId": "Lab-1", "at": "2026-11-16T15:00:00.000Z", "expected": ["DENY", "USER_EXPIRED"] },
+    { "id": "S14-lockdown-security-stepup", "userId": "demo-security-01", "zoneId": "Server-Room", "at": "2026-11-23T15:00:00.000Z", "expected": ["STEP_UP", "CALENDAR_STEP_UP"] },
+    { "id": "S15-lockdown-security-approved", "userId": "demo-security-01", "zoneId": "Server-Room", "at": "2026-11-23T15:00:00.000Z", "secondFactorVerified": true, "expected": ["ALLOW", "OK_IN_SCHEDULE"] },
+    { "id": "S16-not-yet-valid-visitor", "userId": "demo-one-day-visitor-01", "zoneId": "Admin-Office", "at": "2026-11-15T15:00:00.000Z", "expected": ["DENY", "USER_NOT_YET_VALID"] },
+    { "id": "O01-offline-low-risk-allow", "userId": "demo-student-01", "zoneId": "Library", "mode": "offline", "at": "2026-11-16T15:00:00.000Z", "expected": ["ALLOW", "OFFLINE_LOW_RISK_ALLOW"] },
+    { "id": "O02-offline-medium-stepup", "userId": "demo-faculty-01", "zoneId": "Lab-1", "mode": "offline", "at": "2026-11-16T15:00:00.000Z", "expected": ["STEP_UP", "OFFLINE_MEDIUM_RISK_STEPUP"] },
+    { "id": "O03-offline-high-risk-deny", "userId": "demo-admin-01", "zoneId": "Server-Room", "mode": "offline", "at": "2026-11-16T15:00:00.000Z", "expected": ["DENY", "HIGH_RISK_OFFLINE_DENY"] },
+    { "id": "O04-offline-uncertain-deny", "userId": "demo-student-01", "zoneId": "Library", "mode": "offline", "at": "2026-11-16T15:00:00.000Z", "biometric": "uncertain", "expected": ["DENY", "OFFLINE_LIVENESS_FAILED"] },
+    { "id": "O05-offline-no-credential", "userId": "demo-student-01", "zoneId": "Library", "mode": "offline", "credentialValid": false, "at": "2026-11-16T15:00:00.000Z", "expected": ["DENY", "OFFLINE_CREDENTIAL_INVALID"] },
+    { "id": "O06-offline-bad-signature", "userId": "demo-student-01", "zoneId": "Library", "mode": "offline", "bundle": { "signatureValid": false }, "at": "2026-11-16T15:00:00.000Z", "expected": ["DENY", "BUNDLE_SIGNATURE_INVALID"] },
+    { "id": "O07-offline-expired-bundle", "userId": "demo-student-01", "zoneId": "Library", "mode": "offline", "bundle": { "expiresAt": "2026-11-16T14:00:00.000Z" }, "at": "2026-11-16T15:00:00.000Z", "expected": ["DENY", "BUNDLE_EXPIRED"] },
+    { "id": "O08-offline-clock-drift", "userId": "demo-student-01", "zoneId": "Library", "mode": "offline", "wallTime": "2026-11-16T16:00:00.000Z", "at": "2026-11-16T15:00:00.000Z", "expected": ["DENY", "CLOCK_DRIFT"] },
+    { "id": "O09-offline-calendar-holiday", "userId": "demo-student-01", "zoneId": "Library", "mode": "offline", "at": "2026-11-26T15:00:00.000Z", "expected": ["DENY", "CALENDAR_BLOCK"] },
+    { "id": "O10-offline-escort-deny", "userId": "demo-visitor-01", "zoneId": "Admin-Office", "mode": "offline", "at": "2026-11-16T15:00:00.000Z", "expected": ["DENY", "OFFLINE_ESCORT_UNAVAILABLE"] }
+  ]
+}

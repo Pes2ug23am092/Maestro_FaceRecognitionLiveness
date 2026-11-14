@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Locked-test decision record",
+  "type": "object",
+  "required": ["sample_id", "split", "mode", "truth", "attack_type", "identity_is_match", "cold_start", "latency_ms", "spoof_prob", "outcome", "online_outcome", "must_deny_offline"],
+  "properties": {
+    "sample_id": {"type": "string", "minLength": 1, "description": "Opaque random ID; do not use names or badge IDs."},
+    "split": {"const": "locked_test"},
+    "mode": {"enum": ["ONLINE", "OFFLINE"]},
+    "truth": {"enum": ["genuine", "attack"]},
+    "attack_type": {"type": ["string", "null"]},
+    "identity_is_match": {"type": ["boolean", "null"]},
+    "cold_start": {"type": "boolean"},
+    "latency_ms": {"type": "number", "minimum": 0},
+    "spoof_prob": {"type": "number", "minimum": 0, "maximum": 1, "description": "Continuous Tier 1 score used for score-swept ROC/DET curves."},
+    "outcome": {"enum": ["ALLOW", "STEP_UP", "DENY"]},
+    "online_outcome": {"enum": ["ALLOW", "STEP_UP", "DENY"], "description": "Paired online outcome, used to compare offline policy changes."},
+    "must_deny_offline": {"type": "boolean", "description": "Ground-truth marker for forbidden offline ALLOW cases; true ALLOW values count as fail-open."},
+    "sync_success": {"type": ["boolean", "null"]},
+    "sync_latency_ms": {"type": ["number", "null"], "minimum": 0},
+    "ablation": {
+      "type": "object",
+      "required": ["rekognition_only", "tier1_only", "tier1_tier2", "full_stack"],
+      "properties": {
+        "rekognition_only": {"enum": ["ALLOW", "STEP_UP", "DENY"]},
+        "tier1_only": {"enum": ["ALLOW", "STEP_UP", "DENY"]},
+        "tier1_tier2": {"enum": ["ALLOW", "STEP_UP", "DENY"]},
+        "full_stack": {"enum": ["ALLOW", "STEP_UP", "DENY"]}
+      },
+      "additionalProperties": false
+    }
+  },
+  "allOf": [
+    {
+      "if": {"properties": {"mode": {"const": "ONLINE"}}},
+      "then": {"required": ["ablation"]},
+      "else": {"not": {"required": ["ablation"]}}
+    }
+  ],
+  "additionalProperties": false
+}

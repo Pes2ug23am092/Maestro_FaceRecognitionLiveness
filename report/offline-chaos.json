@@ -1,0 +1,72 @@
+{
+  "total": 11,
+  "passed": 11,
+  "failOpen": 0,
+  "results": [
+    {
+      "id": "network-loss-mid-decision",
+      "passed": true,
+      "observed": "ALLOW:OFFLINE_LOW_RISK_ALLOW",
+      "mustDeny": false
+    },
+    {
+      "id": "short-outage-safe-local-path",
+      "passed": true,
+      "observed": "ALLOW:OFFLINE_LOW_RISK_ALLOW",
+      "mustDeny": false
+    },
+    {
+      "id": "O03-offline-high-risk-deny",
+      "passed": true,
+      "observed": "DENY:HIGH_RISK_OFFLINE_DENY",
+      "mustDeny": true
+    },
+    {
+      "id": "O06-offline-bad-signature",
+      "passed": true,
+      "observed": "DENY:BUNDLE_SIGNATURE_INVALID",
+      "mustDeny": true
+    },
+    {
+      "id": "long-outage-expired-bundle",
+      "passed": true,
+      "observed": "DENY:BUNDLE_EXPIRED",
+      "mustDeny": true
+    },
+    {
+      "id": "O08-offline-clock-drift",
+      "passed": true,
+      "observed": "DENY:CLOCK_DRIFT",
+      "mustDeny": true
+    },
+    {
+      "id": "O04-offline-uncertain-deny",
+      "passed": true,
+      "observed": "DENY:OFFLINE_LIVENESS_FAILED",
+      "mustDeny": true
+    },
+    {
+      "id": "tampered-audit-chain",
+      "passed": true,
+      "observed": "AUDIT_HASH_MISMATCH",
+      "mustDeny": true
+    },
+    {
+      "id": "duplicate-audit-event",
+      "passed": true,
+      "observed": "AUDIT_DUPLICATE_EVENT",
+      "mustDeny": true
+    },
+    {
+      "id": "flapping-sync-chain-intact",
+      "passed": true,
+      "observed": "VALID"
+    },
+    {
+      "id": "lost-audit-event-detected",
+      "passed": true,
+      "observed": "AUDIT_SEQUENCE_GAP",
+      "mustDeny": true
+    }
+  ]
+}

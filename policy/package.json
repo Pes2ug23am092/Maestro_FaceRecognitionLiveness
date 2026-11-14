@@ -1,0 +1,18 @@
+{
+  "name": "maestro-policy-d",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "scripts": {
+    "build": "node ./node_modules/typescript/bin/tsc --project tsconfig.json",
+    "test": "npm run build && node --test dist/test/*.test.js",
+    "vectors": "npm run build && node dist/src/run-vectors.js --output ../report/policy-vectors.json",
+    "offline:drill": "npm run build && node dist/src/run-offline-drills.js"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.9.0"
+  }
+}
