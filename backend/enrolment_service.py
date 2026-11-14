@@ -74,7 +74,7 @@ def enroll_user(badge_id: str, image_bytes: bytes, group_id: str = "GRP_EMPLOYEE
         Image={"Bytes": image_bytes},
         ExternalImageId=badge_id,
         DetectionAttributes=["ALL"],
-        QualityFilter="HIGH",
+        QualityFilter="AUTO",
         MaxFaces=1
     )
 
@@ -97,7 +97,7 @@ def enroll_user(badge_id: str, image_bytes: bytes, group_id: str = "GRP_EMPLOYEE
             "group_id": group_id,
             "status": "active",
             "primary_face_id": face_id,
-            "enrolled_at": str(boto3.client('sts').get_caller_identity()) # or timestamp
+            "enrolled_at": int(__import__("time").time())  # timestamp only: never store account/ARN details in the users table
         }
     )
 

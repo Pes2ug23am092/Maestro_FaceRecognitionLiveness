@@ -22,6 +22,9 @@ KMS_KEY_ID = os.getenv("KMS_KEY_ID", None)
 
 # Thresholds
 SIMILARITY_THRESHOLD = float(os.getenv("SIMILARITY_THRESHOLD", "90.0"))
-FACE_QUALITY_MIN_SHARPNESS = float(os.getenv("FACE_QUALITY_MIN_SHARPNESS", "50.0"))
-FACE_QUALITY_MIN_BRIGHTNESS = float(os.getenv("FACE_QUALITY_MIN_BRIGHTNESS", "40.0"))
+FACE_QUALITY_MIN_SHARPNESS = float(os.getenv("FACE_QUALITY_MIN_SHARPNESS", "20.0"))
+FACE_QUALITY_MIN_BRIGHTNESS = float(os.getenv("FACE_QUALITY_MIN_BRIGHTNESS", "30.0"))
 SESSION_TTL_SECONDS = int(os.getenv("SESSION_TTL_SECONDS", "30"))
+
+# Tier 1 (B) image-quality gate (0..1); webcams are soft, so keep this low
+TIER1_QUALITY_MIN = float(os.getenv("TIER1_QUALITY_MIN", "0.15"))

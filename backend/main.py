@@ -13,6 +13,8 @@ from backend.enrolment_service import enroll_user
 from backend.policy_service import get_policy_bundle_payload, issue_credential
 from backend.sync_service import sync_audit_batch
 from backend.otp_service import generate_otp_for_user, verify_otp
+from backend.tier2_service import issue_challenge, verify_tier2
+from backend.kiosk_page import router as kiosk_router
 from backend.config import REGION
 
 app = FastAPI(
@@ -36,6 +38,7 @@ class DecideRequest(BaseModel):
     badge_id: str
     zone_id: str
     kiosk_id: Optional[str] = "KIOSK_MAIN"
+    now: Optional[str] = None  # demo clock, e.g. "Tue 23:30" or "2026-11-20 10:00"
 
 class EnrollRequest(BaseModel):
     badge_id: str
@@ -69,6 +72,12 @@ class SyncBatchRequest(BaseModel):
     batch_id: str
     events: List[SyncEvent]
 
+@app.on_event("startup")
+def _warm():
+    from backend.decide_service import warm_up
+    print("[startup] warm-up:", warm_up())
+
+
 @app.get("/health")
 def health():
     return {"status": "healthy", "service": "kiosk-auth-backend", "region": REGION}
@@ -93,6 +102,7 @@ async def post_decide(request: Request):
         image_bytes = await frame_file.read()
         frame_b64 = base64.b64encode(image_bytes).decode("utf-8")
         frames = [frame_b64]
+        now = str(form.get("now") or "") or None
     else:
         body = await request.json()
         req = DecideRequest(**body)
@@ -101,13 +111,15 @@ async def post_decide(request: Request):
         badge_id = req.badge_id
         zone_id = req.zone_id
         kiosk_id = req.kiosk_id or "KIOSK_MAIN"
+        now = req.now
 
     code, payload = decide_access(
         nonce=nonce,
         frames=frames,
         badge_id=badge_id,
         zone_id=zone_id,
-        kiosk_id=kiosk_id
+        kiosk_id=kiosk_id,
+        now=now,
     )
 
     if code == 200:
@@ -166,6 +178,11 @@ def post_enroll(req: EnrollRequest):
     res = enroll_user(req.badge_id, img_bytes, req.group_id or "GRP_EMPLOYEE")
     if not res["success"]:
         raise HTTPException(status_code=400, detail=res)
+    try:  # first search right after indexing was measured at ~4 s: pay that here, not on the user's first scan
+        from backend.decide_service import call_search_faces
+        call_search_faces(img_bytes)
+    except Exception:  # noqa: BLE001
+        pass
     return res
 
 # ---------------------------------------------------------------------------
@@ -175,24 +192,25 @@ def post_enroll(req: EnrollRequest):
 
 
 
+@app.post("/challenge")
+def post_challenge():
+    """Tier 2: issue a nonce-bound challenge (random colour-flash sequence + head-turn). Single use, expires."""
+    return issue_challenge()
+
+
 @app.post("/challenge/verify")
-async def post_challenge_verify(
-    badge_id: str = Form(...),
-    nonce: str = Form(...),
-    action: str = Form(...),
-    response_frame: UploadFile = File(...),
-):
-    """Tier 2 nonce action challenge verification. Accepts the follow-up camera frame."""
-    image_bytes = await response_frame.read()
-    # Basic action verification: confirm a face is present in the response frame
-    frame_b64 = base64.b64encode(image_bytes).decode("utf-8")
-    return {
-        "verified": True,
-        "status": "verified",
-        "action": action,
-        "badge_id": badge_id,
-        "message": f"Tier 2 action '{action}' verified successfully.",
-    }
+async def post_challenge_verify(request: Request):
+    """Tier 2 verification. JSON {challenge_id, frames[], t_ms[], badge_id, zone_id, now?} (timestamped burst).
+    The legacy single-frame multipart call can NOT prove a colour sync or a head turn, so it fails closed."""
+    if "multipart/form-data" in request.headers.get("content-type", ""):
+        return {"verified": False, "status": "failed",
+                "message": "Tier 2 needs a timestamped multi-frame burst (JSON). A single frame cannot prove a head turn "
+                           "or colour sync. Use /kiosk or POST JSON to /challenge/verify."}
+    body = await request.json()
+    code, payload = verify_tier2(body)
+    if code != 200:
+        raise HTTPException(status_code=code, detail=payload)
+    return payload
 
 
 @app.post("/challenge/otp")
@@ -220,33 +238,19 @@ async def post_liveness_validate(
     session_id: str = Form(...),
     liveness_frame: UploadFile = File(...),
 ):
-    """Tier 3 liveness: retrieve session results from Rekognition."""
-    image_bytes = await liveness_frame.read()
+    """Tier 3 liveness: Rekognition Face Liveness session result. FAILS CLOSED on any error (never a demo pass)."""
     rek = boto3.client("rekognition", region_name=REGION)
     try:
         res = rek.get_face_liveness_session_results(SessionId=session_id)
-        confidence = res.get("Confidence", 0.0)
-        status = res.get("Status", "FAILED")
-        verified = status == "SUCCEEDED" and confidence >= 90.0
-        return {
-            "verified": verified,
-            "status": "verified" if verified else "failed",
-            "confidence": confidence,
+    except Exception as e:  # noqa: BLE001
+        return {"verified": False, "status": "failed", "confidence": 0.0,
+                "message": f"Face Liveness session could not be verified ({type(e).__name__})."}
+    confidence = res.get("Confidence", 0.0)
+    status = res.get("Status", "FAILED")
+    verified = status == "SUCCEEDED" and confidence >= 90.0
+    return {"verified": verified, "status": "verified" if verified else "failed", "confidence": confidence,
             "liveness_status": status,
-            "message": (
-                f"Tier 3 liveness confidence: {confidence:.1f}% (PASSED)"
-                if verified
-                else f"Tier 3 liveness confidence: {confidence:.1f}% (FAILED)"
-            ),
-        }
-    except Exception as e:
-        # Fallback for demo if session was already consumed
-        return {
-            "verified": True,
-            "status": "verified",
-            "confidence": 97.0,
-            "message": f"Liveness session verified (demo fallback). Session: {session_id}",
-        }
+            "message": f"Tier 3 liveness confidence: {confidence:.1f}% ({'PASSED' if verified else 'FAILED'})"}
 
 
 @app.get("/face-liveness-session/{session_id}")
@@ -262,6 +266,8 @@ def get_liveness_session_results(session_id: str):
         }
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"Session not found or expired: {e}")
+
+app.include_router(kiosk_router)
 
 # Handler for AWS Lambda (if deploying via Mangum / API Gateway)
 try:

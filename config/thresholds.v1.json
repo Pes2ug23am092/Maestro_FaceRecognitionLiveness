@@ -1,0 +1,25 @@
+{
+  "schema_version": 1,
+  "status": "draft",
+  "calibrated": false,
+  "locked_test": false,
+  "frozen_at": null,
+  "git_commit": null,
+  "note": "Illustrative starting points only. Calibrate on validation data and freeze in a reviewed commit before opening the locked test split.",
+  "spoof_veto": 0.98,
+  "phone_paper_veto": 0.98,
+  "risk_levels": {
+    "lobby": {
+      "live_allow": 0.92,
+      "live_deny": 0.20,
+      "similarity_allow": 0.82,
+      "similarity_deny": 0.50
+    },
+    "server_room": {
+      "live_allow": 0.97,
+      "live_deny": 0.10,
+      "similarity_allow": 0.90,
+      "similarity_deny": 0.65
+    }
+  }
+}

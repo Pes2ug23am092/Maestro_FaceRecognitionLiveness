@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "status": "draft",
+  "calibrated": true,
+  "locked_test": false,
+  "frozen_at": null,
+  "git_commit": null,
+  "note": "B calibration (same schema as thresholds.v1.json). Liveness values come from the public-data CNN (spoof_prob; live = 1 - spoof_prob) calibrated on non-test CASIA subjects: spoof_deny 0.5, spoof_allow 0.25. Similarity is on the Rekognition scale / 100 and is NOT yet calibrated on our own captures. Freeze only after own-data calibration.",
+  "spoof_veto": 0.98,
+  "phone_paper_veto": 0.95,
+  "risk_levels": {
+    "lobby":       {"live_allow": 0.75, "live_deny": 0.50, "similarity_allow": 0.90, "similarity_deny": 0.70},
+    "office":      {"live_allow": 0.80, "live_deny": 0.50, "similarity_allow": 0.92, "similarity_deny": 0.75},
+    "server_room": {"live_allow": 0.85, "live_deny": 0.50, "similarity_allow": 0.95, "similarity_deny": 0.80}
+  }
+}
